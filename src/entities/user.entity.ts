@@ -25,19 +25,19 @@ export class User {
   @Column({ nullable: false })
   password: string;
 
-  @Column({ unique: true, nullable: false })
+  @Column({ unique: true, nullable: true })
   matricNumber: string;
 
-  @Column({ nullable: true })
-  phoneNumber: string;
+  @Column({ nullable: false })
+  phone: string;
 
   @Column({ type: 'enum', enum: UserRole, nullable: false })
   role: UserRole;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   department: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   faculty: string;
 
   @Column({ nullable: true })

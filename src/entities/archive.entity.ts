@@ -11,13 +11,13 @@ export class Archive {
   id: number;
 
   @Column({ nullable: false })
-  projectTitle: string;
-
-  @Column()
-  studentName: string;
+  title: string;
 
   @Column({ nullable: false })
-  departmentName: string;
+  author: string;
+
+  @Column({ nullable: false })
+  category: string;
 
   @Column({ nullable: false })
   supervisedBy: string;
@@ -27,6 +27,9 @@ export class Archive {
 
   @Column('text', { nullable: false })
   abstract: string;
+
+  @Column('text', { nullable: false })
+  introduction: string;
 
   @CreateDateColumn({ type: 'timestamp', nullable: false })
   archivedAt: Date;
