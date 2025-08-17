@@ -10,7 +10,7 @@ import { UserModule } from './modules/user/user.module';
 @Module({
   imports: [
     TypeOrmModule.forRoot({
-      type: envConfig.dbType as 'mysql' | 'postgres' | 'sqlite',
+      type: envConfig.dbType,
       host: envConfig.dbHost,
       port: Number(envConfig.dbPort),
       username: envConfig.dbUser,
