@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsInt, IsNotEmpty } from 'class-validator';
+import { IsString, IsInt, IsNotEmpty, IsEnum, IsOptional, IsEmail } from 'class-validator';
+import { ProjectCategory } from 'src/entities/archive.entity';
 
 export class CreateArchiveDto {
   @ApiProperty({ description: 'Title of the project' })
@@ -12,10 +13,23 @@ export class CreateArchiveDto {
   @IsNotEmpty()
   author: string;
 
-  @ApiProperty({ description: 'Category of the project' })
-  @IsString()
+  @ApiProperty({description: 'Email of author'})
+  @IsEmail()
+  @IsOptional()
+  email?: string
+
+  @ApiProperty({
+    enum: ProjectCategory,
+    description: 'Category of the project',
+  })
+  @IsEnum(ProjectCategory)
   @IsNotEmpty()
-  category: string;
+  category: ProjectCategory;
+
+  // @ApiProperty({ description: 'Department project is associated with' })
+  // @IsString()
+  // @IsNotEmpty()
+  // department: string;
 
   @ApiProperty({ description: 'Supervisor of the project' })
   @IsString()

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Archive } from '../../entities/archive.entity';
+import { Archive, ProjectCategory } from '../../entities/archive.entity';
 import { createResponse } from 'src/utils/global/create-response';
 
 @Injectable()
@@ -27,7 +27,8 @@ export class UserService {
   // ARCHIVE
   async getArchives(
     search: string,
-    category: string,
+    category: ProjectCategory,
+    // department: string,
     year: number,
     page: number = 1,
     limit: number = 10,

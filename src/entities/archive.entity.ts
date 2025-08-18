@@ -5,6 +5,11 @@ import {
   CreateDateColumn,
 } from 'typeorm';
 
+export enum ProjectCategory {
+  DESIGN = 'DESIGN',
+  RESEARCH = 'RESEARCH',
+}
+
 @Entity('archives')
 export class Archive {
   @PrimaryGeneratedColumn()
@@ -16,8 +21,15 @@ export class Archive {
   @Column({ nullable: false })
   author: string;
 
-  @Column({ nullable: false })
-  category: string;
+  @Column({ nullable: true })
+  email: string;
+
+  @Column({ type: 'enum', enum: ProjectCategory, nullable: false })
+  category: ProjectCategory;
+
+  // TODO: Know what to do when my Dogo decides
+  // @Column({ nullable: false })
+  // department: string;
 
   @Column({ nullable: false })
   supervisedBy: string;
