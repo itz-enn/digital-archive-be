@@ -1,15 +1,18 @@
-// import { Entity, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
-// import { FileSubmission } from './file-submission.entity';
-// import { ProjectTopic } from './project-topic.entity';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, OneToMany, Column } from 'typeorm';
+import { User } from './user.entity';
+import { FileSubmission } from './file-submission.entity';
 
-// @Entity('projects')
-// export class Project {
-//   @PrimaryGeneratedColumn()
-//   id: number;
+@Entity('projects')
+export class Project {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-//   @OneToMany(() => FileSubmission, (fileSubmission) => fileSubmission.project)
-//   fileSubmissions: FileSubmission[];
+  @ManyToOne(() => User)
+  student: User;
 
-//   @OneToMany(() => ProjectTopic, (projectTopic) => projectTopic.project)
-//   projectTopics: ProjectTopic[];
-// }
+  @Column({ type: 'float', default: 0 })
+  progress: number;
+
+  @OneToMany(() => FileSubmission, fileSubmission => fileSubmission.project)
+  fileSubmissions: FileSubmission[];
+}

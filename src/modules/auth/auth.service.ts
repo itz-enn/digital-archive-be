@@ -48,4 +48,8 @@ export class AuthService {
       user,
     });
   }
+
+  //TODO: complete
+  async forgottenPassword() {}
+
 }

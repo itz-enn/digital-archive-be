@@ -15,7 +15,7 @@ export class UserController {
 
   @Get('archives')
   @ApiOperation({ summary: 'Get archives and total count with filters' })
-  @ApiResponse({ status: 200, description: 'Archives retrieved successfully' })
+  @ApiResponse({ status: 200, description: 'Archives retrieved ' })
   @ApiQuery({
     name: 'search',
     required: false,
@@ -24,7 +24,7 @@ export class UserController {
   @ApiQuery({
     name: 'category',
     required: false,
-    description: 'category name',
+    description: 'Category name',
   })
   @ApiQuery({
     name: 'year',
@@ -59,7 +59,7 @@ export class UserController {
   @ApiParam({ name: 'id', type: Number, description: 'Archive ID' })
   @ApiResponse({
     status: 200,
-    description: 'Archive info retrieved successfully',
+    description: 'Archive retrieved ',
   })
   @ApiResponse({ status: 400, description: 'Archive not found' })
   async getArchiveById(@Param('id') id: string) {

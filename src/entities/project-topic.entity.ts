@@ -1,29 +1,26 @@
-// import {
-//   Entity,
-//   PrimaryGeneratedColumn,
-//   Column,
-//   ManyToOne,
-//   CreateDateColumn,
-// } from 'typeorm';
-// import { Project } from './project.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn } from 'typeorm';
+import { User } from './user.entity';
 
-// @Entity('project_topics')
-// export class ProjectTopic {
-//   @PrimaryGeneratedColumn()
-//   id: number;
+@Entity('project_topics')
+export class ProjectTopic {
+  @PrimaryGeneratedColumn()
+  id: number;
 
-//   @ManyToOne(() => Project, (project) => project.projectTopics)
-//   project: Project;
+  @ManyToOne(() => User)
+  student: User;
 
-//   @Column()
-//   title: string;
+  @ManyToOne(() => User)
+  supervisor: User;
 
-//   @Column('text')
-//   description: string;
+  @Column()
+  title: string;
 
-//   @Column({ type: 'enum', enum: ['pending', 'approved', 'rejected'] })
-//   status: 'pending' | 'approved' | 'rejected';
+  @Column('text')
+  description: string;
 
-//   @CreateDateColumn({ type: 'timestamp' })
-//   created_at: Date;
-// }
+  @Column({ type: 'enum', enum: ['pending', 'approved', 'rejected'] })
+  status: 'pending' | 'approved' | 'rejected';
+
+  @CreateDateColumn({ type: 'timestamp' })
+  submitted_at: Date;
+}

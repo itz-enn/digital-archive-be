@@ -24,7 +24,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('Digital Archive API')
     .setDescription(
-      'The api documentation for Digital Archives of Final Year Project',
+      'The api documentation for Digital Archives of Final Year Projects',
     )
     .setVersion('1.0')
     .addTag('auth')

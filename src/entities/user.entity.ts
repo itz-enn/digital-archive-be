@@ -40,9 +40,6 @@ export class User {
   @Column({ nullable: true })
   faculty: string;
 
-  @Column({ nullable: true })
-  superviseeLimit: number;
-
   @CreateDateColumn({ nullable: false })
   createdAt: Date;
 
