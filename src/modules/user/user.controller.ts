@@ -7,6 +7,7 @@ import {
   ApiParam,
 } from '@nestjs/swagger';
 import { UserService } from './user.service';
+import { ProjectCategory } from 'src/entities/archive.entity';
 
 @ApiTags('user')
 @Controller('user')
@@ -23,9 +24,16 @@ export class UserController {
   })
   @ApiQuery({
     name: 'category',
+    enum: ProjectCategory,
     required: false,
-    description: 'Category name',
+    description: 'Category of project',
   })
+  // TODO
+  // @ApiQuery({
+  //   name: 'department',
+  //   required: false,
+  //   description: 'Department project is associated with',
+  // })
   @ApiQuery({
     name: 'year',
     required: false,
@@ -46,7 +54,8 @@ export class UserController {
   })
   async getArchives(
     @Query('search') search?: string,
-    @Query('category') category?: string,
+    @Query('category') category?: ProjectCategory,
+    // @Query('department') department?: string,
     @Query('year') year?: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,

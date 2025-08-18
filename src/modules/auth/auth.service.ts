@@ -21,19 +21,14 @@ export class AuthService {
   async register(dto: RegisterDto) {}
 
   async login(dto: LoginDto) {
-    const { email, password } = dto;
+    const { institutionId, password } = dto;
 
     const user = await this.userRepository.findOne({
-      where: { email },
+      where: { institutionId },
     });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       throw new UnauthorizedException('Invalid email or password');
     }
-
-    // TODO: Check if the user is verified
-    // if (!user.email_verified) {
-    //   throw new BadRequestException('User account is not verified');
-    // }
 
     const payload: UserPayload = {
       id: user.id,
@@ -51,5 +46,4 @@ export class AuthService {
 
   //TODO: complete
   async forgottenPassword() {}
-
 }

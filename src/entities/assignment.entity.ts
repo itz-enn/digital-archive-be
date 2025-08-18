@@ -12,17 +12,19 @@ export class Assignment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  //TODO make it a one to one thingy
-  // when searching for student how will I display student details and also who the supervisor is
   @ManyToOne(() => User, (user) => user.id)
   supervisor: User;
 
+  //TODO let instances be deleted if student is deleted
   @ManyToOne(() => User, (user) => user.id)
   student: User;
 
-  @Column({ type: 'int', default: 10 })
-  student_limit: number;
+  @Column({ nullable: false, default: true })
+  isActive: boolean;
 
-  @CreateDateColumn({ type: 'timestamp' })
-  assigned_at: Date;
+  @CreateDateColumn({ type: 'timestamp', nullable: false })
+  assignedAt: Date;
+
+  @CreateDateColumn({ type: 'timestamp', nullable: false })
+  updatedAt: Date;
 }
