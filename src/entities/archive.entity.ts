@@ -31,6 +31,9 @@ export class Archive {
   @Column('text', { nullable: false })
   introduction: string;
 
+  @Column({ nullable: false })
+  filePath: string;
+
   @CreateDateColumn({ type: 'timestamp', nullable: false })
   archivedAt: Date;
 }

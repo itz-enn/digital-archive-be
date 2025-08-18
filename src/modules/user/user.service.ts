@@ -1,7 +1,8 @@
-  import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Archive } from '../../entities/archive.entity';
+import { createResponse } from 'src/utils/global/create-response';
 
 @Injectable()
 export class UserService {
@@ -10,6 +11,20 @@ export class UserService {
     private readonly archiveRepository: Repository<Archive>,
   ) {}
 
+  private async createNotification() {}
+
+  // NOTIFICATIONS
+  async getNotification() {}
+
+  // PROFILE SETTING
+  async editProfile() {}
+
+  // SYSTEM PREFERENCES
+  async getPreferences() {}
+
+  async editPreferences() {}
+
+  // ARCHIVE
   async getArchives(
     search: string,
     category: string,
@@ -39,16 +54,19 @@ export class UserService {
       .take(limit)
       .getManyAndCount();
 
-      //TODO: Archives retrieved successfully
-    return {
+    return createResponse('Archives retrieved', {
       data,
-      total,
-      page,
-      limit,
-    };
+      currentPage: page,
+      totalArchives: total,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    });
   }
 
   async getArchiveById(id: number) {
-    return this.archiveRepository.findOne({ where: { id } });
+    const archive = await this.archiveRepository.findOne({ where: { id } });
+    if (!archive) {
+      throw new NotFoundException('Archive not found');
+    }
+    return createResponse('Archive retrieved', archive);
   }
 }
