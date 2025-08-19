@@ -13,11 +13,10 @@ export class Assignment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user.id)
+  @ManyToOne(() => User, (user) => user.id, { onDelete: 'CASCADE' })
   supervisor: User;
 
-  //TODO let instances be deleted if student is deleted
-  @ManyToOne(() => User, (user) => user.id)
+  @ManyToOne(() => User, (user) => user.id, { onDelete: 'CASCADE' })
   student: User;
 
   @Column({ nullable: false, default: true })

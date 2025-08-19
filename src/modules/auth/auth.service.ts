@@ -12,7 +12,6 @@ import * as bcrypt from 'bcryptjs';
 import { User } from 'src/entities/user.entity';
 import { UserPayload } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import { RegisterDto } from './dto/register.dto';
 import { Department } from 'src/entities/department.entity';
 
 @Injectable()
@@ -23,30 +22,6 @@ export class AuthService {
 
     private readonly jwtService: JwtService,
   ) {}
-
-  async register(dto: RegisterDto) {
-    const existingUser = await this.userRepo.findOne({
-      where: { institutionId: dto.institutionId },
-    });
-    if (existingUser) {
-      throw new ConflictException('User already exists');
-    }
-
-    const department = await this.deptRepo.findOneBy({ id: dto.departmentId });
-    if (!department) {
-      throw new NotFoundException('Department not found');
-    }
-
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const user = this.userRepo.create({
-      ...dto,
-      password: hashedPassword,
-      department,
-    });
-    await this.userRepo.save(user);
-
-    return createResponse('Registration successful', { user });
-  }
 
   async login(dto: LoginDto) {
     const { institutionId, password } = dto;

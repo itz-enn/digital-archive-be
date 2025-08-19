@@ -6,6 +6,7 @@ import {
   Body,
   Param,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -21,6 +22,8 @@ import { RoleGuard } from 'src/utils/guards/role.guard';
 import { CreateArchiveDto } from './dto/create-archive.dto';
 import { UpdateArchiveDto } from './dto/update-archive.dto';
 import { UserRole } from 'src/entities/user.entity';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UserPayload } from 'express';
 
 @ApiTags('coordinator')
 @ApiBearerAuth()
@@ -28,6 +31,17 @@ import { UserRole } from 'src/entities/user.entity';
 @Controller('coordinator')
 export class CoordinatorController {
   constructor(private readonly coordinatorService: CoordinatorService) {}
+
+  @Post('create-user')
+  @ApiResponse({ status: 200, description: 'User created successfully' })
+  @ApiResponse({ status: 400, description: 'User already exists' })
+  async register(
+    @Body() dto: CreateUserDto,
+    @Req() req: Request & { user: UserPayload },
+  ) {
+    const userId = req.user.id;
+    return this.coordinatorService.createUserAccount(userId, dto);
+  }
 
   @Post('archives')
   @ApiOperation({ summary: 'Creates a new archive' })

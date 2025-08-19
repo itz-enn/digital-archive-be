@@ -10,7 +10,7 @@ import {
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from 'src/entities/user.entity';
 
-export class RegisterDto {
+export class CreateUserDto {
   @ApiProperty({ description: "User's fullname" })
   @IsString()
   @IsNotEmpty()
@@ -21,10 +21,10 @@ export class RegisterDto {
   @IsNotEmpty()
   institutionId: string;
 
-  @ApiProperty({ description: "User's email" })
+  @ApiProperty({ description: "User's email", required: false })
   @IsEmail()
-  @IsNotEmpty()
-  email: string;
+  @IsOptional()
+  email?: string;
 
   @ApiProperty({ description: "User's password" })
   @IsString()
@@ -36,19 +36,19 @@ export class RegisterDto {
   @IsOptional()
   phone?: string;
 
+  //TODO: test if this works
   @ApiProperty({
-    enum: ['COORDINATOR', 'SUPERVISOR', 'STUDENT'],
-    description: 'Role of the user (admin not allowed)',
+    enum: ['SUPERVISOR', 'STUDENT'],
+    description: 'Role of the user (admin and coordinator not allowed)',
   })
   @IsEnum(UserRole)
   @IsNotEmpty()
-  @Validate((value: UserRole) => value !== UserRole.ADMIN, {
-    message: 'Admin role cannot be assigned',
-  })
+  @Validate(
+    (value: UserRole) =>
+      value !== UserRole.ADMIN && value !== UserRole.COORDINATOR,
+    {
+      message: 'Admin and Coordinator roles cannot be assigned',
+    },
+  )
   role: UserRole;
-
-  @ApiProperty({ description: 'Department ID associated with user' })
-  @IsNumber()
-  @IsNotEmpty()
-  departmentId: number;
 }
