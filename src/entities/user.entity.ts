@@ -4,7 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Department } from './department.entity';
 
 export enum UserRole {
   ADMIN = 'ADMIN',
@@ -41,8 +44,9 @@ export class User {
   @Column({ type: 'enum', enum: UserRole, nullable: false })
   role: UserRole;
 
-  @Column({ nullable: true })
-  department: string;
+  @ManyToOne(() => Department, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'departmentId' })
+  department: Department;
 
   @Column({
     type: 'enum',

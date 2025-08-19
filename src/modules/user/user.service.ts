@@ -8,7 +8,7 @@ import { createResponse } from 'src/utils/global/create-response';
 export class UserService {
   constructor(
     @InjectRepository(Archive)
-    private readonly archiveRepository: Repository<Archive>,
+    private readonly archiveRepo: Repository<Archive>,
   ) {}
 
   private async createNotification() {}
@@ -33,7 +33,7 @@ export class UserService {
     page: number = 1,
     limit: number = 10,
   ) {
-    const queryBuilder = this.archiveRepository.createQueryBuilder('archive');
+    const queryBuilder = this.archiveRepo.createQueryBuilder('archive');
 
     if (search) {
       queryBuilder.andWhere(
@@ -68,7 +68,7 @@ export class UserService {
   }
 
   async getArchiveById(id: number) {
-    const archive = await this.archiveRepository.findOne({ where: { id } });
+    const archive = await this.archiveRepo.findOne({ where: { id } });
     if (!archive) {
       throw new NotFoundException('Archive not found');
     }

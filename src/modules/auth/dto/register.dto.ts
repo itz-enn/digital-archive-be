@@ -2,6 +2,7 @@ import {
   IsEmail,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   Validate,
@@ -46,8 +47,8 @@ export class RegisterDto {
   })
   role: UserRole;
 
-  @ApiProperty({ description: 'department associated with user' })
-  @IsString()
+  @ApiProperty({ description: 'Department ID associated with user' })
+  @IsNumber()
   @IsNotEmpty()
-  department: string;
+  departmentId: number;
 }

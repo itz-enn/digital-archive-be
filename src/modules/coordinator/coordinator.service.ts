@@ -10,7 +10,7 @@ import { createResponse } from 'src/utils/global/create-response';
 export class CoordinatorService {
   constructor(
     @InjectRepository(Archive)
-    private readonly archiveRepository: Repository<Archive>,
+    private readonly archiveRepo: Repository<Archive>,
   ) {}
 
   // DASHBOARD
@@ -39,23 +39,23 @@ export class CoordinatorService {
 
   // ARCHIVE
   async createArchive(dto: CreateArchiveDto) {
-    const archive = this.archiveRepository.create(dto);
-    await this.archiveRepository.save(archive);
+    const archive = this.archiveRepo.create(dto);
+    await this.archiveRepo.save(archive);
     return createResponse('Archive created', archive);
   }
 
   async updateArchive(id: number, dto: UpdateArchiveDto) {
-    const archive = await this.archiveRepository.findOne({ where: { id } });
+    const archive = await this.archiveRepo.findOne({ where: { id } });
     if (!archive) {
       throw new NotFoundException('Archive not found');
     }
     Object.assign(archive, dto);
-    const updatedArchive = await this.archiveRepository.save(archive);
+    const updatedArchive = await this.archiveRepo.save(archive);
     return createResponse('Archive updated', updatedArchive);
   }
 
   async deleteArchive(id: number) {
-    const result = await this.archiveRepository.delete(id);
+    const result = await this.archiveRepo.delete(id);
     if (result.affected === 0) {
       throw new NotFoundException('Archive not found');
     }

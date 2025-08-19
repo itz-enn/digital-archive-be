@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { createResponse } from 'src/utils/global/create-response';
@@ -8,33 +9,41 @@ import { LoginDto } from './dto/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User, UserRole } from 'src/entities/user.entity';
+import { User } from 'src/entities/user.entity';
 import { UserPayload } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
+import { Department } from 'src/entities/department.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(User) private userRepo: Repository<User>,
+    @InjectRepository(Department) private deptRepo: Repository<Department>,
 
     private readonly jwtService: JwtService,
   ) {}
 
   async register(dto: RegisterDto) {
-    const existingUser = await this.userRepository.findOne({
+    const existingUser = await this.userRepo.findOne({
       where: { institutionId: dto.institutionId },
     });
     if (existingUser) {
       throw new ConflictException('User already exists');
     }
 
+    const department = await this.deptRepo.findOneBy({ id: dto.departmentId });
+    if (!department) {
+      throw new NotFoundException('Department not found');
+    }
+
     const hashedPassword = await bcrypt.hash(dto.password, 10);
-    const user = this.userRepository.create({
+    const user = this.userRepo.create({
       ...dto,
       password: hashedPassword,
+      department,
     });
-    await this.userRepository.save(user);
+    await this.userRepo.save(user);
 
     return createResponse('Registration successful', { user });
   }
@@ -42,7 +51,7 @@ export class AuthService {
   async login(dto: LoginDto) {
     const { institutionId, password } = dto;
 
-    const user = await this.userRepository
+    const user = await this.userRepo
       .createQueryBuilder('user')
       .where('user.institutionId = :institutionId', { institutionId })
       .addSelect('user.password')

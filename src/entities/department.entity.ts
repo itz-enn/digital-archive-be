@@ -4,7 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { User } from './user.entity';
 
 @Entity('departments')
 export class Department {
@@ -13,10 +16,6 @@ export class Department {
 
   @Column({ nullable: false, unique: true })
   name: string;
-
-  //TODO: make many to one relation
-  @Column({ nullable: true })
-  coordinatorId: number;
 
   @CreateDateColumn({ type: 'timestamp', nullable: false })
   createdAt: Date;
