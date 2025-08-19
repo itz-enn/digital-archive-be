@@ -4,6 +4,7 @@ import {
   ManyToOne,
   CreateDateColumn,
   Column,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 
@@ -25,6 +26,6 @@ export class Assignment {
   @CreateDateColumn({ type: 'timestamp', nullable: false })
   assignedAt: Date;
 
-  @CreateDateColumn({ type: 'timestamp', nullable: false })
+  @UpdateDateColumn({ type: 'timestamp', nullable: false })
   updatedAt: Date;
 }

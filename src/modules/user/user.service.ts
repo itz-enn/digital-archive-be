@@ -28,7 +28,7 @@ export class UserService {
   async getArchives(
     search: string,
     category: ProjectCategory,
-    // department: string,
+    department: string,
     year: number,
     page: number = 1,
     limit: number = 10,
@@ -44,6 +44,10 @@ export class UserService {
 
     if (category) {
       queryBuilder.andWhere('archive.category = :category', { category });
+    }
+
+    if (department) {
+      queryBuilder.andWhere('archive.department = :department', { department });
     }
 
     if (year) {

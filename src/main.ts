@@ -29,6 +29,7 @@ async function bootstrap() {
     .setVersion('1.0')
     .addTag('auth')
     .addTag('admin')
+    .addTag('coordinator')
     .addTag('user')
     .addTag('supervisor')
     .addTag('student')

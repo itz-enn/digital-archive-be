@@ -1,10 +1,14 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { createResponse } from 'src/utils/global/create-response';
 import { LoginDto } from './dto/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User } from 'src/entities/user.entity';
+import { User, UserRole } from 'src/entities/user.entity';
 import { UserPayload } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterDto } from './dto/register.dto';
@@ -17,17 +21,34 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  //TODO: complete function
-  async register(dto: RegisterDto) {}
+  async register(dto: RegisterDto) {
+    const existingUser = await this.userRepository.findOne({
+      where: { institutionId: dto.institutionId },
+    });
+    if (existingUser) {
+      throw new ConflictException('User already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const user = this.userRepository.create({
+      ...dto,
+      password: hashedPassword,
+    });
+    await this.userRepository.save(user);
+
+    return createResponse('Registration successful', { user });
+  }
 
   async login(dto: LoginDto) {
     const { institutionId, password } = dto;
 
-    const user = await this.userRepository.findOne({
-      where: { institutionId },
-    });
+    const user = await this.userRepository
+      .createQueryBuilder('user')
+      .where('user.institutionId = :institutionId', { institutionId })
+      .addSelect('user.password')
+      .getOne();
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid ID or password');
     }
 
     const payload: UserPayload = {
@@ -45,5 +66,5 @@ export class AuthService {
   }
 
   //TODO: complete
-  async forgottenPassword() {}
+  // async forgottenPassword() {}
 }

@@ -28,12 +28,11 @@ export class UserController {
     required: false,
     description: 'Category of project',
   })
-  // TODO
-  // @ApiQuery({
-  //   name: 'department',
-  //   required: false,
-  //   description: 'Department project is associated with',
-  // })
+  @ApiQuery({
+    name: 'department',
+    required: false,
+    description: 'Department project is associated with',
+  })
   @ApiQuery({
     name: 'year',
     required: false,
@@ -55,12 +54,12 @@ export class UserController {
   async getArchives(
     @Query('search') search?: string,
     @Query('category') category?: ProjectCategory,
-    // @Query('department') department?: string,
+    @Query('department') department?: string,
     @Query('year') year?: number,
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ) {
-    return this.userService.getArchives(search, category, year, page, limit);
+    return this.userService.getArchives(search, category, department, year, page, limit);
   }
 
   @Get('archive/:id')

@@ -26,10 +26,10 @@ export class CreateArchiveDto {
   @IsNotEmpty()
   category: ProjectCategory;
 
-  // @ApiProperty({ description: 'Department project is associated with' })
-  // @IsString()
-  // @IsNotEmpty()
-  // department: string;
+  @ApiProperty({ description: 'Department project is associated with' })
+  @IsString()
+  @IsNotEmpty()
+  department: string;
 
   @ApiProperty({ description: 'Supervisor of the project' })
   @IsString()
