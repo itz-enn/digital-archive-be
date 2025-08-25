@@ -59,16 +59,20 @@ export class UserController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ) {
-    return this.userService.getArchives(search, category, department, year, page, limit);
+    return this.userService.getArchives(
+      search,
+      category,
+      department,
+      year,
+      page,
+      limit,
+    );
   }
 
   @Get('archive/:id')
   @ApiOperation({ summary: 'Get info about a single archive by id' })
   @ApiParam({ name: 'id', type: Number, description: 'Archive ID' })
-  @ApiResponse({
-    status: 200,
-    description: 'Archive retrieved ',
-  })
+  @ApiResponse({ status: 200, description: 'Archive retrieved' })
   @ApiResponse({ status: 400, description: 'Archive not found' })
   async getArchiveById(@Param('id') id: string) {
     return this.userService.getArchiveById(Number(id));

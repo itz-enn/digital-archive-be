@@ -54,17 +54,20 @@ export class UserService {
       queryBuilder.andWhere('archive.year = :year', { year });
     }
 
-    const [data, total] = await queryBuilder
+    const [archives, total] = await queryBuilder
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
 
-    return createResponse('Archives retrieved', {
-      data,
-      currentPage: page,
-      totalArchives: total,
-      totalPages: Math.max(1, Math.ceil(total / limit)),
-    });
+    return createResponse(
+      total < 0 ? 'No archives found' : 'Archives retrieved',
+      {
+        archives,
+        currentPage: page,
+        totalArchives: total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    );
   }
 
   async getArchiveById(id: number) {

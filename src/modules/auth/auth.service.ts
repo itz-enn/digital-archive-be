@@ -28,6 +28,7 @@ export class AuthService {
 
     const user = await this.userRepo
       .createQueryBuilder('user')
+      .leftJoinAndSelect('user.department', 'department')
       .where('user.institutionId = :institutionId', { institutionId })
       .addSelect('user.password')
       .getOne();
@@ -45,7 +46,7 @@ export class AuthService {
 
     return createResponse('Login successful', {
       access_token: token,
-      user,
+      user: { ...user, department: user.department.name },
     });
   }
 

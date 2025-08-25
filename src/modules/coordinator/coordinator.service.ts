@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -10,11 +11,11 @@ import { CreateArchiveDto } from './dto/create-archive.dto';
 import { UpdateArchiveDto } from './dto/update-archive.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { createResponse } from 'src/utils/global/create-response';
-import { User } from 'src/entities/user.entity';
+import { User, UserRole, UserStatus } from 'src/entities/user.entity';
 import * as bcrypt from 'bcryptjs';
 import { AssignStudentsDto } from './dto/assign-students.dto';
 import { Assignment } from 'src/entities/assignment.entity';
-import { ReassignStudentDto } from './dto/reassign-student.dto copy';
+import { StudentLimitDto } from './dto/student-limit.dto';
 
 @Injectable()
 export class CoordinatorService {
@@ -29,7 +30,10 @@ export class CoordinatorService {
     id: number,
     type: 'Student' | 'Supervisor' | 'User' = 'User',
   ): Promise<User> {
-    const user = await this.userRepo.findOne({ where: { id } });
+    const user = await this.userRepo.findOne({
+      where: { id },
+      relations: ['department'],
+    });
     if (!user) {
       throw new NotFoundException(`${type} not found`);
     }
@@ -46,7 +50,7 @@ export class CoordinatorService {
     }
     const { department } = await this.findUserById(id);
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await bcrypt.hash(dto.institutionId, 10);
     const user = this.userRepo.create({
       ...dto,
       password: hashedPassword,
@@ -56,7 +60,10 @@ export class CoordinatorService {
 
     delete user.password;
 
-    return createResponse('User created successfully', { user });
+    return createResponse('User created successfully', {
+      ...user,
+      department: department?.name,
+    });
   }
 
   async getCoordinatorAnalytics() {}
@@ -66,74 +73,123 @@ export class CoordinatorService {
   // ASSIGNING SUPERVISORS
   async assignStudents(dto: AssignStudentsDto) {
     const supervisor = await this.findUserById(dto.supervisorId, 'Supervisor');
-
+    // Count currently assigned students plus the new ones to be assigned
+    const activeCount = await this.assignmentRepo.count({
+      where: { supervisor: { id: supervisor.id }, isActive: true },
+    });
+    if (
+      activeCount + dto.studentInstitutionIds.length >
+      supervisor.maxStudents
+    ) {
+      throw new BadRequestException(
+        `Supervisor can only take ${supervisor.maxStudents - activeCount} more students (limit: ${supervisor.maxStudents})`,
+      );
+    }
     const assignmentsToSave: Assignment[] = [];
-    const assignedStudents: User[] = [];
+    const assignedStudents: string[] = [];
 
-    for (const matric of dto.studentInstitutionIds) {
-      const student = await this.userRepo.findOne({
-        where: { institutionId: matric, isAssigned: false },
-      });
+    for (const institutionId of dto.studentInstitutionIds) {
+      const student = await this.userRepo.findOne({ where: { institutionId } });
+      if (!student) continue;
 
-      if (!student) {
-        continue;
+      if (student.isAssigned) {
+        //check if user is assigned is true and if there's an existing assignment
+        const existingAssignment = await this.assignmentRepo.findOne({
+          where: { student: { id: student.id }, isActive: true },
+          relations: ['supervisor'],
+        });
+        if (existingAssignment) {
+          if (existingAssignment.supervisor.id === supervisor.id) {
+            // skip if user is already assigned to this supervisor
+            continue;
+          } else {
+            // deactivate old supervisor assignment
+            existingAssignment.isActive = false;
+            await this.assignmentRepo.save(existingAssignment);
+          }
+        }
       }
 
-      const assignment = this.assignmentRepo.create({
+      const newAssignment = this.assignmentRepo.create({
         supervisor,
         student,
+        isActive: true,
       });
-
-      assignmentsToSave.push(assignment);
+      assignmentsToSave.push(newAssignment);
       student.isAssigned = true;
       await this.userRepo.save(student);
-
-      assignedStudents.push(student);
+      assignedStudents.push(student.institutionId);
     }
     // save all new assignments at once
-    await this.assignmentRepo.save(assignmentsToSave);
-    // TODO: what should I return
-    return createResponse('Students assigned', {});
+    if (assignmentsToSave.length > 0) {
+      await this.assignmentRepo.save(assignmentsToSave);
+    }
+    return createResponse('Students assigned', { assignedStudents });
   }
 
-  async changeStudentAssignment(dto: ReassignStudentDto) {
-    const student = await this.findUserById(dto.studentId, 'Student');
+  async getUsersByFilter(
+    id: number,
+    role: UserRole,
+    search?: string,
+    isAssigned?: boolean,
+    status?: UserStatus,
+    page: number = 1,
+    limit: number = 10,
+  ) {
+    const user = await this.findUserById(id);
+    const query = this.userRepo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.department', 'department')
+      .where('user.role = :role', { role })
+      .andWhere('user.departmentId = :deptId', {
+        deptId: user.department.id,
+      });
 
-    const currentAssignment = await this.assignmentRepo.findOne({
-      where: { student: { id: student.id }, isActive: true },
-    });
-    if (!currentAssignment) {
-      throw new NotFoundException('Current assignment not found');
+    // Search filter
+    if (search) {
+      query.andWhere(
+        '(user.fullName ILIKE :search OR user.email ILIKE :search)',
+        { search: `%${search}%` },
+      );
     }
 
-    const supervisor = await this.findUserById(dto.supervisorId, 'Supervisor');
-    const newAssignment = this.assignmentRepo.create({
-      supervisor,
-      student,
+    if (typeof isAssigned === 'boolean') {
+      query.andWhere('user.isAssigned = :isAssigned', { isAssigned });
+    }
+
+    // Filter by status (Active / Inactive)
+    if (status) {
+      query.andWhere('user.status = :status', { status });
+    }
+
+    // Pagination
+    const [users, total] = await query
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    const modifyUsers = users.map((u) => ({
+      ...u,
+      department: u.department?.name ?? null,
+    }));
+
+    return createResponse(total < 0 ? 'No user found' : 'Users retrieved', {
+      users: modifyUsers,
+      total,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
     });
-    await this.assignmentRepo.save(newAssignment);
-
-    currentAssignment.isActive = false;
-    await this.assignmentRepo.save(currentAssignment);
-
-    return createResponse('Student reassigned', {});
   }
-
-  async getSupervisors() {}
-
-  async getAllStudents() {}
 
   // MANAGING SUPERVISORS
-  async getSupervisorDetails() {}
-
-  async editStudentLimit(supervisorId: number, newLimit: number) {
-    const supervisor = await this.findUserById(supervisorId, 'Supervisor');
-    if (newLimit < 0) {
+  async editStudentLimit(dto: StudentLimitDto) {
+    const supervisor = await this.findUserById(dto.supervisorId, 'Supervisor');
+    if (dto.maxStudents < 0) {
       throw new ConflictException('Student limit cannot be negative');
     }
-    supervisor.maxStudents = newLimit;
+    supervisor.maxStudents = dto.maxStudents;
     await this.userRepo.save(supervisor);
-    return createResponse('Student limit updated', {});
+    return createResponse('Max student limit updated', {});
   }
 
   // SYSTEM STATISTICS

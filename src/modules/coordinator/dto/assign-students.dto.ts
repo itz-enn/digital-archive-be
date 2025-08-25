@@ -1,15 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsArray, IsNotEmpty, IsNumber, IsString } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsNotEmpty,
+  IsNumber,
+  IsString,
+} from 'class-validator';
 
 export class AssignStudentsDto {
-  @ApiProperty({description: 'The ID of the supervisor'})
+  @ApiProperty({ description: 'The ID of the supervisor' })
   @IsNumber()
   @IsNotEmpty()
   supervisorId: number;
 
-  @ApiProperty({description: 'Array containing institution IDs of students'})
+  @ApiProperty({ description: 'Array containing institution IDs of students' })
   @IsArray()
-  @IsNotEmpty()
+  @ArrayNotEmpty()
   @IsString({ each: true })
   studentInstitutionIds: string[];
 }

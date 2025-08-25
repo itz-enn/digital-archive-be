@@ -26,29 +26,18 @@ export class CreateUserDto {
   @IsOptional()
   email?: string;
 
-  @ApiProperty({ description: "User's password" })
-  @IsString()
-  @IsNotEmpty()
-  password: string;
-
   @ApiProperty({ description: "User's phone number", required: false })
   @IsString()
   @IsOptional()
   phone?: string;
 
-  //TODO: test if this works
   @ApiProperty({
     enum: ['SUPERVISOR', 'STUDENT'],
     description: 'Role of the user (admin and coordinator not allowed)',
   })
-  @IsEnum(UserRole)
+  @IsEnum(['SUPERVISOR', 'STUDENT'], {
+    message: 'role must be one of the following values: SUPERVISOR, STUDENT',
+  })
   @IsNotEmpty()
-  @Validate(
-    (value: UserRole) =>
-      value !== UserRole.ADMIN && value !== UserRole.COORDINATOR,
-    {
-      message: 'Admin and Coordinator roles cannot be assigned',
-    },
-  )
   role: UserRole;
 }
