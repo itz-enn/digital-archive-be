@@ -6,6 +6,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { SupervisorModule } from './modules/supervisor/supervisor.module';
 import { StudentModule } from './modules/student/student.module';
 import { UserModule } from './modules/user/user.module';
+import { CoordinatorModule } from './modules/coordinator/coordinator.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { UserModule } from './modules/user/user.module';
     }),
     AuthModule,
     AdminModule,
+    CoordinatorModule,
     UserModule,
     SupervisorModule,
     StudentModule,

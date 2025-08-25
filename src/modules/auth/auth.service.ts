@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { createResponse } from 'src/utils/global/create-response';
 import { LoginDto } from './dto/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -7,27 +12,28 @@ import * as bcrypt from 'bcryptjs';
 import { User } from 'src/entities/user.entity';
 import { UserPayload } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import { RegisterDto } from './dto/register.dto';
+import { Department } from 'src/entities/department.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User) private userRepository: Repository<User>,
+    @InjectRepository(User) private userRepo: Repository<User>,
+    @InjectRepository(Department) private deptRepo: Repository<Department>,
 
     private readonly jwtService: JwtService,
   ) {}
 
-  //TODO: complete function
-  async register(dto: RegisterDto) {}
-
   async login(dto: LoginDto) {
     const { institutionId, password } = dto;
 
-    const user = await this.userRepository.findOne({
-      where: { institutionId },
-    });
+    const user = await this.userRepo
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.department', 'department')
+      .where('user.institutionId = :institutionId', { institutionId })
+      .addSelect('user.password')
+      .getOne();
     if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid ID or password');
     }
 
     const payload: UserPayload = {
@@ -40,10 +46,10 @@ export class AuthService {
 
     return createResponse('Login successful', {
       access_token: token,
-      user,
+      user: { ...user, department: user.department.name },
     });
   }
 
   //TODO: complete
-  async forgottenPassword() {}
+  // async forgottenPassword() {}
 }

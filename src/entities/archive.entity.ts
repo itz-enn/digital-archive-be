@@ -27,9 +27,8 @@ export class Archive {
   @Column({ type: 'enum', enum: ProjectCategory, nullable: false })
   category: ProjectCategory;
 
-  // TODO: Know what to do when my Dogo decides
-  // @Column({ nullable: false })
-  // department: string;
+  @Column({ nullable: false })
+  department: string;
 
   @Column({ nullable: false })
   supervisedBy: string;

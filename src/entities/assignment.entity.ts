@@ -4,19 +4,19 @@ import {
   ManyToOne,
   CreateDateColumn,
   Column,
+  UpdateDateColumn,
 } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity('assignemnts')
+@Entity('assignments')
 export class Assignment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => User, (user) => user.id)
+  @ManyToOne(() => User, (user) => user.id, { onDelete: 'CASCADE' })
   supervisor: User;
 
-  //TODO let instances be deleted if student is deleted
-  @ManyToOne(() => User, (user) => user.id)
+  @ManyToOne(() => User, (user) => user.id, { onDelete: 'CASCADE' })
   student: User;
 
   @Column({ nullable: false, default: true })
@@ -25,6 +25,6 @@ export class Assignment {
   @CreateDateColumn({ type: 'timestamp', nullable: false })
   assignedAt: Date;
 
-  @CreateDateColumn({ type: 'timestamp', nullable: false })
+  @UpdateDateColumn({ type: 'timestamp', nullable: false })
   updatedAt: Date;
 }

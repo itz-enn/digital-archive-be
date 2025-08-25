@@ -3,10 +3,15 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { Department } from './department.entity';
 
 export enum UserRole {
   ADMIN = 'ADMIN',
+  COORDINATOR = 'COORDINATOR',
   SUPERVISOR = 'SUPERVISOR',
   STUDENT = 'STUDENT',
 }
@@ -30,17 +35,18 @@ export class User {
   @Column({ nullable: true, unique: true })
   email: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: false, select: false })
   password: string;
 
-  @Column({ nullable: false })
+  @Column({ nullable: true })
   phone: string;
 
   @Column({ type: 'enum', enum: UserRole, nullable: false })
   role: UserRole;
 
-  @Column({ nullable: true })
-  department: string;
+  @ManyToOne(() => Department, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'departmentId' })
+  department: Department;
 
   @Column({
     type: 'enum',
@@ -61,6 +67,6 @@ export class User {
   @CreateDateColumn({ type: 'timestamp', nullable: false })
   createdAt: Date;
 
-  @CreateDateColumn({ type: 'timestamp', nullable: false })
+  @UpdateDateColumn({ type: 'timestamp', nullable: false })
   updatedAt: Date;
 }

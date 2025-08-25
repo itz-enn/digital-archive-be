@@ -14,6 +14,7 @@ const envConfig = {
   jwtSecret: process.env.JWT_SECRET,
   adminEmail: process.env.ADMIN_EMAIL,
   adminPassword: process.env.ADMIN_PASSWORD,
+  adminInstitutionId: process.env.ADMIN_INSTITUTION_ID,
 };
 
 export default envConfig;

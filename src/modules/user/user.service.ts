@@ -8,7 +8,7 @@ import { createResponse } from 'src/utils/global/create-response';
 export class UserService {
   constructor(
     @InjectRepository(Archive)
-    private readonly archiveRepository: Repository<Archive>,
+    private readonly archiveRepo: Repository<Archive>,
   ) {}
 
   private async createNotification() {}
@@ -28,12 +28,12 @@ export class UserService {
   async getArchives(
     search: string,
     category: ProjectCategory,
-    // department: string,
+    department: string,
     year: number,
     page: number = 1,
     limit: number = 10,
   ) {
-    const queryBuilder = this.archiveRepository.createQueryBuilder('archive');
+    const queryBuilder = this.archiveRepo.createQueryBuilder('archive');
 
     if (search) {
       queryBuilder.andWhere(
@@ -46,25 +46,32 @@ export class UserService {
       queryBuilder.andWhere('archive.category = :category', { category });
     }
 
+    if (department) {
+      queryBuilder.andWhere('archive.department = :department', { department });
+    }
+
     if (year) {
       queryBuilder.andWhere('archive.year = :year', { year });
     }
 
-    const [data, total] = await queryBuilder
+    const [archives, total] = await queryBuilder
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
 
-    return createResponse('Archives retrieved', {
-      data,
-      currentPage: page,
-      totalArchives: total,
-      totalPages: Math.max(1, Math.ceil(total / limit)),
-    });
+    return createResponse(
+      total < 0 ? 'No archives found' : 'Archives retrieved',
+      {
+        archives,
+        currentPage: page,
+        totalArchives: total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    );
   }
 
   async getArchiveById(id: number) {
-    const archive = await this.archiveRepository.findOne({ where: { id } });
+    const archive = await this.archiveRepo.findOne({ where: { id } });
     if (!archive) {
       throw new NotFoundException('Archive not found');
     }

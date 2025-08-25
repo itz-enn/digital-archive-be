@@ -13,6 +13,7 @@ const {
   nodeEnv,
   adminEmail,
   adminPassword,
+  adminInstitutionId
 } = envConfig;
 
 export const dataSource = new DataSource({
@@ -49,6 +50,7 @@ export async function adminSeed() {
 
   const adminUser = userRepository.create({
     fullName: 'Admin',
+    institutionId: adminInstitutionId,
     email: adminEmail,
     password: hashedPassword,
     phone: '1234567890',
