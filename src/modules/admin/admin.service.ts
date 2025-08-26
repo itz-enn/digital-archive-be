@@ -36,10 +36,9 @@ export class AdminService {
         'Coordinator for this department already exists',
       );
     }
-
     const department = await this.findDepartmentById(dto.departmentId);
 
-    const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const hashedPassword = await bcrypt.hash(dto.institutionId, 10);
     const coordinator = this.userRepo.create({
       ...dto,
       role: UserRole.COORDINATOR,
@@ -57,6 +56,25 @@ export class AdminService {
     return createResponse('Coordinator deleted', {});
   }
 
+  async getAllCoordinators() {
+    const coordinators = await this.userRepo.find({
+      where: { role: UserRole.COORDINATOR },
+      relations: ['department'],
+    });
+    const modifyCoordinators = coordinators.map((c) => ({
+      ...c,
+      department: c.department?.name,
+    }));
+    return createResponse(
+      coordinators.length < 1
+        ? 'No coordinator found'
+        : 'Coordinators retrieved',
+      {
+        coordinators: modifyCoordinators,
+      },
+    );
+  }
+
   async createDepartment(dto: CreateDepartmentDto) {
     const department = this.deptRepo.create(dto);
     await this.deptRepo.save(department);
@@ -72,9 +90,10 @@ export class AdminService {
 
   async deleteDepartment(id: number) {
     const users = await this.userRepo.find({ where: { department: { id } } });
-    // TODO: test this thoroughly
     if (users.length > 0) {
-      throw new NotFoundException('Cannot delete department: users are connected to this department');
+      throw new NotFoundException(
+        'Cannot delete department: users are connected to this department',
+      );
     }
     const result = await this.deptRepo.delete(id);
     if (result.affected === 0)
@@ -84,6 +103,9 @@ export class AdminService {
 
   async getAllDepartments() {
     const departments = await this.deptRepo.find();
-    return createResponse('Departments fetched', departments);
+    return createResponse(
+      departments.length < 1 ? 'No department found' : 'Department found',
+      departments,
+    );
   }
 }
