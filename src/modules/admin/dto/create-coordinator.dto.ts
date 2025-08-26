@@ -17,11 +17,6 @@ export class CreateCoordinatorDto {
   @IsOptional()
   email?: string;
 
-  @ApiProperty({ description: "User's password" })
-  @IsString()
-  @IsNotEmpty()
-  password: string;
-
   @ApiProperty({ description: "User's phone number", required: false })
   @IsString()
   @IsOptional()
