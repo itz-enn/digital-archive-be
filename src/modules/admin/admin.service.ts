@@ -46,7 +46,10 @@ export class AdminService {
       department,
     });
     await this.userRepo.save(coordinator);
-    return createResponse('Coordinator created', coordinator);
+    return createResponse('Coordinator created', {
+      ...coordinator,
+      department: department?.name ?? null,
+    });
   }
 
   async deleteCoordinator(id: number) {
@@ -61,16 +64,16 @@ export class AdminService {
       where: { role: UserRole.COORDINATOR },
       relations: ['department'],
     });
-    const modifyCoordinators = coordinators.map((c) => ({
-      ...c,
-      department: c.department?.name,
-    }));
+
     return createResponse(
       coordinators.length < 1
         ? 'No coordinator found'
         : 'Coordinators retrieved',
       {
-        coordinators: modifyCoordinators,
+        coordinators: coordinators.map((c) => ({
+          ...c,
+          department: c.department?.name ?? null,
+        })),
       },
     );
   }

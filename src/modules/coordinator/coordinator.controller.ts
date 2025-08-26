@@ -17,12 +17,13 @@ import {
   ApiResponse,
   ApiBearerAuth,
   ApiQuery,
+  ApiBody,
+  PartialType,
 } from '@nestjs/swagger';
 import { CoordinatorService } from './coordinator.service';
 import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
 import { RoleGuard } from 'src/utils/guards/role.guard';
 import { CreateArchiveDto } from './dto/create-archive.dto';
-import { UpdateArchiveDto } from './dto/update-archive.dto';
 import { UserRole, UserStatus } from 'src/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserPayload } from 'express';
@@ -44,24 +45,21 @@ export class CoordinatorController {
     @Body() dto: CreateUserDto,
     @Req() req: Request & { user: UserPayload },
   ) {
-    const userId = req.user.id;
-    return this.coordinatorService.createUserAccount(userId, dto);
+    return await this.coordinatorService.createUserAccount(req.user.id, dto);
   }
 
   // @Post('analytics')
   // @ApiOperation({ summary: 'Get coordinator analytics' })
   // @ApiResponse({ status: 200, description: 'Analytics data' })
   // async getCoordinatorAnalytics(@Req() req: Request & { user: UserPayload }) {
-  //   const userId = req.user.id;
-  //   return this.coordinatorService.getCoordinatorAnalytics();
+  //   return await this.coordinatorService.getCoordinatorAnalytics(req.user.id);
   // }
 
   // @Post('statistics')
   // @ApiOperation({ summary: 'Get statistics' })
   // @ApiResponse({ status: 200, description: 'Statistics data' })
   // async getStatistics(@Req() req: Request & { user: UserPayload }) {
-  //   const userId = req.user.id;
-  //   return this.coordinatorService.getStatistics();
+  //   return await this.coordinatorService.getStatistics(req.user.id);
   // }
 
   @Post('assign-students')
@@ -69,7 +67,7 @@ export class CoordinatorController {
   @ApiResponse({ status: 200, description: 'Students assigned' })
   @ApiResponse({ status: 400, description: 'Supervisor not found' })
   async assignStudents(@Body() dto: AssignStudentsDto) {
-    return this.coordinatorService.assignStudents(dto);
+    return await this.coordinatorService.assignStudents(dto);
   }
 
   @Get('users')
@@ -121,9 +119,8 @@ export class CoordinatorController {
     @Query('limit') limit: number,
     @Req() req: Request & { user: UserPayload },
   ) {
-    const userId = req.user.id;
-    return this.coordinatorService.getUsersByFilter(
-      userId,
+    return await this.coordinatorService.getUsersByFilter(
+      req.user.id,
       role,
       search,
       isAssigned,
@@ -133,28 +130,32 @@ export class CoordinatorController {
     );
   }
 
-  @Put('edit-student-limit')
+  @Put('student-limit')
   @ApiOperation({ summary: 'Edit student limit for supervisors' })
   @ApiResponse({ status: 200, description: 'Max student limit updated' })
   @ApiResponse({ status: 400, description: 'Supervisor not found' })
   async editStudentLimit(@Body() dto: StudentLimitDto) {
-    return this.coordinatorService.editStudentLimit(dto);
+    return await this.coordinatorService.editStudentLimit(dto);
   }
 
   @Post('archives')
   @ApiOperation({ summary: 'Creates a new archive' })
   @ApiResponse({ status: 200, description: 'Archive created' })
   async createArchive(@Body() dto: CreateArchiveDto) {
-    return this.coordinatorService.createArchive(dto);
+    return await this.coordinatorService.createArchive(dto);
   }
 
   @Put('archives/:id')
   @ApiOperation({ summary: 'Update an archive by id' })
+  @ApiBody({ type: PartialType(CreateArchiveDto) })
   @ApiResponse({ status: 200, description: 'Archive updated' })
   @ApiResponse({ status: 400, description: 'Archive not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Archive ID' })
-  async updateArchive(@Param('id') id: string, @Body() dto: UpdateArchiveDto) {
-    return this.coordinatorService.updateArchive(Number(id), dto);
+  async updateArchive(
+    @Param('id') id: string,
+    @Body() dto: Partial<CreateArchiveDto>,
+  ) {
+    return await this.coordinatorService.updateArchive(Number(id), dto);
   }
 
   @Delete('archives/:id')
@@ -163,6 +164,6 @@ export class CoordinatorController {
   @ApiResponse({ status: 400, description: 'Archive not found' })
   @ApiParam({ name: 'id', type: Number, description: 'Archive ID' })
   async deleteArchive(@Param('id') id: string) {
-    return this.coordinatorService.deleteArchive(Number(id));
+    return await this.coordinatorService.deleteArchive(Number(id));
   }
 }

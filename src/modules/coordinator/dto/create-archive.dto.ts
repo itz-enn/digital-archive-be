@@ -13,7 +13,7 @@ export class CreateArchiveDto {
   @IsNotEmpty()
   author: string;
 
-  @ApiProperty({description: 'Email of author'})
+  @ApiProperty({description: 'Email of author', required: false})
   @IsEmail()
   @IsOptional()
   email?: string

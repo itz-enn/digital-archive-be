@@ -1,9 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { createResponse } from 'src/utils/global/create-response';
 import { LoginDto } from './dto/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -25,7 +20,6 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const { institutionId, password } = dto;
-
     const user = await this.userRepo
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.department', 'department')
@@ -46,7 +40,7 @@ export class AuthService {
 
     return createResponse('Login successful', {
       access_token: token,
-      user: { ...user, department: user.department.name },
+      user: { ...user, department: user.department?.name ?? null },
     });
   }
 

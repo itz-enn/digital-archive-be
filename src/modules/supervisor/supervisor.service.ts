@@ -16,7 +16,4 @@ export class SupervisorService {
   async getSubmittedTopicsByStudent() {}
 
   async reviewTopics() {}
-
-  // DUPLICATE CHECK
-  async checkProjectDuplicate() {}
 }

@@ -1,18 +1,57 @@
-import { Controller, Get, Query, Param } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Query,
+  Param,
+  Put,
+  Req,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiQuery,
   ApiResponse,
   ApiParam,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { ProjectCategory } from 'src/entities/archive.entity';
+import { EditProfileDto } from './dto/edit-profile.dto';
+import { UserPayload } from 'express';
+import { AuthGuard } from '@nestjs/passport';
+import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
 
 @ApiTags('user')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Get('profile/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user profile by ID' })
+  @ApiResponse({ status: 200, description: 'User profile retrieved' })
+  @ApiResponse({ status: 400, description: 'User not found' })
+  @ApiParam({ name: 'id', type: Number, description: 'User ID' })
+  async getUserProfile(
+    @Param('id') id: number,
+    @Req() req: Request & { user: UserPayload },
+  ) {
+    return await this.userService.getUserProfile(req.user.id, id);
+  }
+
+  @Put('profile/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Edit user profile by ID' })
+  @ApiResponse({ status: 200, description: 'User profile updated' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiParam({ name: 'id', type: Number, description: 'User ID' })
+  async editProfile(@Param('id') id: number, @Body() dto: EditProfileDto) {
+    return await this.userService.editProfile(id, dto);
+  }
 
   @Get('archives')
   @ApiOperation({ summary: 'Get archives and total count with filters' })
@@ -59,7 +98,7 @@ export class UserController {
     @Query('page') page: number = 1,
     @Query('limit') limit: number = 10,
   ) {
-    return this.userService.getArchives(
+    return await this.userService.getArchives(
       search,
       category,
       department,
@@ -75,6 +114,6 @@ export class UserController {
   @ApiResponse({ status: 200, description: 'Archive retrieved' })
   @ApiResponse({ status: 400, description: 'Archive not found' })
   async getArchiveById(@Param('id') id: string) {
-    return this.userService.getArchiveById(Number(id));
+    return await this.userService.getArchiveById(Number(id));
   }
 }

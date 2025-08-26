@@ -21,7 +21,9 @@ export function RoleGuard(requiredRole: UserRole): Type<CanActivate> {
       }
 
       if (user.role !== requiredRole) {
-        throw new UnauthorizedException('Insufficient permissions');
+        throw new UnauthorizedException(
+          `Insufficient permissions: required role is '${requiredRole}'`,
+        );
       }
 
       return true;
