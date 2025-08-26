@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Archive } from '../../entities/archive.entity';
 import { CreateArchiveDto } from './dto/create-archive.dto';
-import { UpdateArchiveDto } from './dto/update-archive.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { createResponse } from 'src/utils/global/create-response';
 import { User, UserRole, UserStatus } from 'src/entities/user.entity';
@@ -16,6 +15,7 @@ import * as bcrypt from 'bcryptjs';
 import { AssignStudentsDto } from './dto/assign-students.dto';
 import { Assignment } from 'src/entities/assignment.entity';
 import { StudentLimitDto } from './dto/student-limit.dto';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class CoordinatorService {
@@ -24,21 +24,9 @@ export class CoordinatorService {
     @InjectRepository(User) private userRepo: Repository<User>,
     @InjectRepository(Assignment)
     private assignmentRepo: Repository<Assignment>,
-  ) {}
 
-  private async findUserById(
-    id: number,
-    type: 'Student' | 'Supervisor' | 'User' = 'User',
-  ): Promise<User> {
-    const user = await this.userRepo.findOne({
-      where: { id },
-      relations: ['department'],
-    });
-    if (!user) {
-      throw new NotFoundException(`${type} not found`);
-    }
-    return user;
-  }
+    private readonly userService: UserService,
+  ) {}
 
   // DASHBOARD
   async createUserAccount(id: number, dto: CreateUserDto) {
@@ -48,7 +36,7 @@ export class CoordinatorService {
     if (existingUser) {
       throw new ConflictException('User already exists');
     }
-    const { department } = await this.findUserById(id);
+    const { department } = await this.userService.findUserById(id);
 
     const hashedPassword = await bcrypt.hash(dto.institutionId, 10);
     const user = this.userRepo.create({
@@ -62,7 +50,7 @@ export class CoordinatorService {
 
     return createResponse('User created successfully', {
       ...user,
-      department: department?.name,
+      department: department?.name ?? null,
     });
   }
 
@@ -72,7 +60,10 @@ export class CoordinatorService {
 
   // ASSIGNING SUPERVISORS
   async assignStudents(dto: AssignStudentsDto) {
-    const supervisor = await this.findUserById(dto.supervisorId, 'Supervisor');
+    const supervisor = await this.userService.findUserById(
+      dto.supervisorId,
+      'Supervisor',
+    );
     // Count currently assigned students plus the new ones to be assigned
     const activeCount = await this.assignmentRepo.count({
       where: { supervisor: { id: supervisor.id }, isActive: true },
@@ -124,7 +115,7 @@ export class CoordinatorService {
     if (assignmentsToSave.length > 0) {
       await this.assignmentRepo.save(assignmentsToSave);
     }
-    return createResponse('Students assigned', { assignedStudents });
+    return createResponse('Students assigned', assignedStudents);
   }
 
   async getUsersByFilter(
@@ -136,7 +127,7 @@ export class CoordinatorService {
     page: number = 1,
     limit: number = 10,
   ) {
-    const user = await this.findUserById(id);
+    const user = await this.userService.findUserById(id);
     const query = this.userRepo
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.department', 'department')
@@ -168,13 +159,11 @@ export class CoordinatorService {
       .take(limit)
       .getManyAndCount();
 
-    const modifyUsers = users.map((u) => ({
-      ...u,
-      department: u.department?.name ?? null,
-    }));
-
     return createResponse(total < 0 ? 'No user found' : 'Users retrieved', {
-      users: modifyUsers,
+      users: users.map((u) => ({
+        ...u,
+        department: u.department?.name ?? null,
+      })),
       total,
       page,
       totalPages: Math.max(1, Math.ceil(total / limit)),
@@ -183,7 +172,10 @@ export class CoordinatorService {
 
   // MANAGING SUPERVISORS
   async editStudentLimit(dto: StudentLimitDto) {
-    const supervisor = await this.findUserById(dto.supervisorId, 'Supervisor');
+    const supervisor = await this.userService.findUserById(
+      dto.supervisorId,
+      'Supervisor',
+    );
     if (dto.maxStudents < 0) {
       throw new ConflictException('Student limit cannot be negative');
     }
@@ -202,7 +194,7 @@ export class CoordinatorService {
     return createResponse('Archive created', archive);
   }
 
-  async updateArchive(id: number, dto: UpdateArchiveDto) {
+  async updateArchive(id: number, dto: Partial<CreateArchiveDto>) {
     const archive = await this.archiveRepo.findOne({ where: { id } });
     if (!archive) {
       throw new NotFoundException('Archive not found');
