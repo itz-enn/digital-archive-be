@@ -1,16 +1,25 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Archive, ProjectCategory } from '../../entities/archive.entity';
 import { createResponse } from 'src/utils/global/create-response';
 import { User, UserRole } from 'src/entities/user.entity';
 import { EditProfileDto } from './dto/edit-profile.dto';
+import { Assignment } from 'src/entities/assignment.entity';
+import { Project, ProposalStatus } from 'src/entities/project.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private userRepo: Repository<User>,
     @InjectRepository(Archive) private archiveRepo: Repository<Archive>,
+    @InjectRepository(Assignment)
+    private assignmentRepo: Repository<Assignment>,
+    @InjectRepository(Project) private projectRepo: Repository<Project>,
   ) {}
 
   async findUserById(
@@ -52,10 +61,43 @@ export class UserService {
         );
       }
     }
-    return createResponse('User profile retrieved', {
+
+    let studentExtras = null;
+    if (targetUser.role === UserRole.STUDENT) {
+      // Get approved topic
+      const approvedProject = await this.projectRepo.findOne({
+        where: {
+          studentId: targetUser.id,
+          proposalStatus: ProposalStatus.APPROVED,
+        },
+      });
+      // Get supervisor (active assignment)
+      const assignment = await this.assignmentRepo.findOne({
+        where: { student: { id: targetUser.id }, isActive: true },
+        relations: ['supervisor'],
+      });
+
+      studentExtras = {
+        project: approvedProject
+          ? {
+              approvedTopic: approvedProject?.title,
+              projectStatus: approvedProject?.projectStatus,
+            }
+          : null,
+        supervisorName: assignment?.supervisor.fullName ?? null,
+      };
+    }
+
+    const user = {
       ...targetUser,
       department: targetUser.department?.name ?? null,
-    });
+    };
+    return createResponse(
+      'User profile retrieved',
+      targetUser.role === UserRole.STUDENT
+        ? { ...user, ...studentExtras }
+        : { ...user },
+    );
   }
 
   async editProfile(id: number, dto: EditProfileDto) {
@@ -63,6 +105,34 @@ export class UserService {
     Object.assign(user, dto);
     await this.userRepo.save(user);
     return createResponse('User profile updated', {});
+  }
+
+  async getSubmittedTopics(loggedInUserId: number, studentId: number) {
+    const assignment = await this.assignmentRepo.findOne({
+      where: { student: { id: studentId }, isActive: true },
+      relations: ['supervisor'],
+    });
+
+    // Authorization check:
+    const isStudent = loggedInUserId === studentId;
+    const isSupervisor =
+      assignment && loggedInUserId === assignment.supervisor.id;
+    if (!isStudent && !isSupervisor) {
+      throw new ForbiddenException(
+        'You are not authorized to view these topics',
+      );
+    }
+    const projects = await this.projectRepo.find({
+      where: { studentId },
+      order: { submittedAt: 'DESC' },
+    });
+
+    return createResponse(
+      projects.length < 1
+        ? 'No topics submitted'
+        : 'Submitted topics retrieved',
+      projects,
+    );
   }
 
   // SYSTEM PREFERENCES
