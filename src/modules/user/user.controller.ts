@@ -20,7 +20,6 @@ import { UserService } from './user.service';
 import { ProjectCategory } from 'src/entities/archive.entity';
 import { EditProfileDto } from './dto/edit-profile.dto';
 import { UserPayload } from 'express';
-import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
 
 @ApiTags('user')
@@ -31,8 +30,15 @@ export class UserController {
   @Get('profile/:id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get user profile by ID' })
-  @ApiResponse({ status: 200, description: 'User profile retrieved' })
+  @ApiOperation({
+    summary:
+      'Get user profile by ID (admin can view coordinator profile, coordinator can view student and supervisor profile, supervisor and student can view only their own profile)',
+  })
+  @ApiResponse({
+    status: 200,
+    description:
+      'User profile retrieved, Returns approved topic, project status and supervisor name if role of user is student',
+  })
   @ApiResponse({ status: 400, description: 'User not found' })
   @ApiParam({ name: 'id', type: Number, description: 'User ID' })
   async getUserProfile(
@@ -51,6 +57,26 @@ export class UserController {
   @ApiParam({ name: 'id', type: Number, description: 'User ID' })
   async editProfile(@Param('id') id: number, @Body() dto: EditProfileDto) {
     return await this.userService.editProfile(id, dto);
+  }
+
+  @Get('submitted-topics/:id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Get submitted topics for a student (student or their supervisor only)',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Student ID' })
+  @ApiResponse({ status: 200, description: 'Submitted topics retrieved' })
+  @ApiResponse({
+    status: 400,
+    description: 'You are not authorized to view these topics',
+  })
+  async getSubmittedTopics(
+    @Param('id') id: number,
+    @Req() req: Request & { user: UserPayload },
+  ) {
+    return await this.userService.getSubmittedTopics(req.user.id, id);
   }
 
   @Get('archives')

@@ -4,9 +4,11 @@ import { UserController } from './user.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Archive } from 'src/entities/archive.entity';
 import { User } from 'src/entities/user.entity';
+import { Assignment } from 'src/entities/assignment.entity';
+import { Project } from 'src/entities/project.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Archive])],
+  imports: [TypeOrmModule.forFeature([User, Archive, Assignment, Project])],
   providers: [UserService],
   controllers: [UserController],
   exports: [UserService],

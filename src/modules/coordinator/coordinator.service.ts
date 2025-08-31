@@ -139,7 +139,7 @@ export class CoordinatorService {
     // Search filter
     if (search) {
       query.andWhere(
-        '(user.fullName ILIKE :search OR user.email ILIKE :search)',
+        '(user.fullName LIKE :search OR user.email LIKE :search)',
         { search: `%${search}%` },
       );
     }
