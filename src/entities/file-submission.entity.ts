@@ -7,19 +7,23 @@ import {
 } from 'typeorm';
 
 export enum FileStatus {
-  PENDING = 'PENDING',
+  //TODO: delete this later
+  //   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
   REVIEWING = 'REVIEWING',
-  REVISED = 'REVISED',
+  // REVISED = 'REVISED',
 }
 
-@Entity('file_submissions')
-export class FileSubmission {
+export enum FileStage {
+  PROPOSAL = 'PROPOSAL',
+  CHAPTER = 'CHAPTER',
+  FINAL_REPORT = 'FINAL_REPORT',
+}
+
+@Entity('project_files')
+export class ProjectFile {
   @PrimaryGeneratedColumn()
   id: number;
-
-  // @ManyToOne(() => Project, (project) => project.fileSubmissions)
-  // project: Project;
 
   @Column({ nullable: false })
   projectId: number;
@@ -30,25 +34,27 @@ export class FileSubmission {
   @Column({ nullable: false })
   version: string;
 
-  //TODO: should this be here???...don't think soooo
-  @Column({ nullable: true })
-  versionDescription: string;
-
   @Column({ nullable: false })
   filePath: string;
+
+  //TODO: i'll see how this goessss
+  @Column({ nullable: false })
+  fileSize: string;
 
   @Column({
     type: 'enum',
     enum: FileStatus,
-    default: FileStatus.PENDING,
+    default: FileStatus.REVIEWING,
     nullable: false,
   })
   status: FileStatus;
 
-  // type: proposal
-
-  @Column({ nullable: false, default: false })
-  isLatest: boolean;
+  @Column({
+    type: 'enum',
+    enum: FileStage,
+    nullable: false,
+  })
+  fileStage: FileStage;
 
   @CreateDateColumn({ nullable: false })
   uploadedAt: Date;
