@@ -10,15 +10,15 @@ import {
 import { Department } from './department.entity';
 
 export enum UserRole {
-  ADMIN = 'ADMIN',
-  COORDINATOR = 'COORDINATOR',
-  SUPERVISOR = 'SUPERVISOR',
-  STUDENT = 'STUDENT',
+  admin = 'admin',
+  coordinator = 'coordinator',
+  supervisor = 'supervisor',
+  student = 'student',
 }
 
 export enum UserStatus {
-  ACTIVE = 'ACTIVE',
-  INACTIVE = 'INACTIVE',
+  active = 'active',
+  inactive = 'inactive',
 }
 
 @Entity('users')
@@ -52,7 +52,7 @@ export class User {
     type: 'enum',
     enum: UserStatus,
     nullable: false,
-    default: UserStatus.ACTIVE,
+    default: UserStatus.active,
   })
   status: UserStatus;
 

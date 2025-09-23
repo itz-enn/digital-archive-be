@@ -28,7 +28,7 @@ export class AdminService {
       await this.userRepo.findOne({
         where: {
           department: { id: dto.departmentId },
-          role: UserRole.COORDINATOR,
+          role: UserRole.coordinator,
         },
       })
     ) {
@@ -41,7 +41,7 @@ export class AdminService {
     const hashedPassword = await bcrypt.hash(dto.institutionId, 10);
     const coordinator = this.userRepo.create({
       ...dto,
-      role: UserRole.COORDINATOR,
+      role: UserRole.coordinator,
       password: hashedPassword,
       department,
     });
@@ -61,7 +61,7 @@ export class AdminService {
 
   async getAllCoordinators() {
     const coordinators = await this.userRepo.find({
-      where: { role: UserRole.COORDINATOR },
+      where: { role: UserRole.coordinator },
       relations: ['department'],
     });
 

@@ -102,14 +102,14 @@ export class SupervisorService {
       throw new NotFoundException('You are not assigned to this student');
     }
 
-    if (status === ProposalStatus.APPROVED) {
+    if (status === ProposalStatus.approved) {
       await this.projectRepo
         .createQueryBuilder()
         .update()
-        .set({ proposalStatus: ProposalStatus.REJECTED })
+        .set({ proposalStatus: ProposalStatus.rejected })
         .where('studentId = :studentId', { studentId: topic.studentId })
         .andWhere('proposalStatus = :status', {
-          status: ProposalStatus.APPROVED,
+          status: ProposalStatus.approved,
         })
         .andWhere('id != :topicId', { topicId })
         .execute();

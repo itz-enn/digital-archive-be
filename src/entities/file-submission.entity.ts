@@ -8,16 +8,16 @@ import {
 
 export enum FileStatus {
   //TODO: delete this later
-  //   PENDING = 'PENDING',
-  APPROVED = 'APPROVED',
-  REVIEWING = 'REVIEWING',
-  // REVISED = 'REVISED',
+  //   pending = 'pending',
+  approved = 'approved',
+  reviewing = 'reviewing',
+  // revised = 'revised',
 }
 
 export enum FileStage {
-  PROPOSAL = 'PROPOSAL',
-  CHAPTER = 'CHAPTER',
-  FINAL_REPORT = 'FINAL_REPORT',
+  proposal = 'proposal',
+  chapter = 'chapter',
+  final_report = 'final_report',
 }
 
 @Entity('project_files')
@@ -44,7 +44,7 @@ export class ProjectFile {
   @Column({
     type: 'enum',
     enum: FileStatus,
-    default: FileStatus.REVIEWING,
+    default: FileStatus.reviewing,
     nullable: false,
   })
   status: FileStatus;

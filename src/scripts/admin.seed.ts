@@ -54,7 +54,7 @@ export async function adminSeed() {
     email: adminEmail,
     password: hashedPassword,
     phone: '1234567890',
-    role: UserRole.ADMIN,
+    role: UserRole.admin,
   });
   await userRepository.save(adminUser);
   console.log('Admin user seeded:', adminUser);

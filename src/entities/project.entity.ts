@@ -8,17 +8,17 @@ import {
 
 // TODO: verify all the enum properties
 export enum ProposalStatus {
-  PENDING = 'PENDING',
-  REJECTED = 'REJECTED',
-  APPROVED = 'APPROVED',
+  pending = 'pending',
+  rejected = 'rejected',
+  approved = 'approved',
 }
 
 export enum ProjectStatus {
-  PROPOSAL = 'PROPOSAL',
-  CHAPTER1_2 = 'CHAPTER1_2',
-  CHAPTER3_5 = 'CHAPTER3_5',
-  FINAL = 'FINAL',
-  COMPLETED = 'COMPLETED',
+  proposal = 'proposal',
+  chapter1_2 = 'chapter1_2',
+  chapter3_5 = 'chapter3_5',
+  final = 'final',
+  completed = 'completed',
 }
 
 @Entity('projects')
@@ -44,7 +44,7 @@ export class Project {
   @Column({
     type: 'enum',
     enum: ProposalStatus,
-    default: ProposalStatus.PENDING,
+    default: ProposalStatus.pending,
     nullable: false,
   })
   proposalStatus: ProposalStatus;
@@ -52,7 +52,7 @@ export class Project {
   @Column({
     type: 'enum',
     enum: ProjectStatus,
-    default: ProjectStatus.PROPOSAL,
+    default: ProjectStatus.proposal,
     nullable: false,
   })
   projectStatus: ProjectStatus;

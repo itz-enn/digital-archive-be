@@ -32,7 +32,7 @@ import { StudentLimitDto } from './dto/student-limit.dto';
 
 @ApiTags('coordinator')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RoleGuard(UserRole.COORDINATOR))
+@UseGuards(JwtAuthGuard, RoleGuard(UserRole.coordinator))
 @Controller('coordinator')
 export class CoordinatorController {
   constructor(private readonly coordinatorService: CoordinatorService) {}
@@ -111,7 +111,7 @@ export class CoordinatorController {
     description: 'Number of results per page',
   })
   async getUsersByFilter(
-    @Query('role') role: UserRole = UserRole.STUDENT,
+    @Query('role') role: UserRole = UserRole.student,
     @Query('search') search: string,
     @Query('isAssigned') isAssigned: boolean,
     @Query('status') status: UserStatus,

@@ -6,9 +6,9 @@ import {
 } from 'typeorm';
 
 export enum NotificationCategory {
-  SYSTEM = 'SYSTEM',
-  USER = 'USER',
-  PROJECT = 'PROJECT',
+  system = 'system',
+  user = 'user',
+  project = 'project',
 }
 
 @Entity()

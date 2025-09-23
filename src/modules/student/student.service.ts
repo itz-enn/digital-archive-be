@@ -37,7 +37,7 @@ export class StudentService {
     if (!topic) {
       throw new NotFoundException('Topic not found');
     }
-    if (topic.projectStatus !== ProjectStatus.PROPOSAL) {
+    if (topic.projectStatus !== ProjectStatus.proposal) {
       throw new NotFoundException(
         'Only topics in PROPOSAL stage can be deleted',
       );
