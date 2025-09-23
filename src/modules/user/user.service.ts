@@ -48,10 +48,10 @@ export class UserService {
 
     if (loggedInUser.id !== targetUser.id) {
       const accessRules: Record<UserRole, UserRole[]> = {
-        [UserRole.ADMIN]: [UserRole.COORDINATOR],
-        [UserRole.COORDINATOR]: [UserRole.STUDENT, UserRole.SUPERVISOR],
-        [UserRole.SUPERVISOR]: [],
-        [UserRole.STUDENT]: [],
+        [UserRole.admin]: [UserRole.coordinator],
+        [UserRole.coordinator]: [UserRole.student, UserRole.supervisor],
+        [UserRole.supervisor]: [],
+        [UserRole.student]: [],
       };
 
       const allowedRoles = accessRules[loggedInUser.role] ?? [];
@@ -63,12 +63,12 @@ export class UserService {
     }
 
     let studentExtras = null;
-    if (targetUser.role === UserRole.STUDENT) {
+    if (targetUser.role === UserRole.student) {
       // Get approved topic
       const approvedProject = await this.projectRepo.findOne({
         where: {
           studentId: targetUser.id,
-          proposalStatus: ProposalStatus.APPROVED,
+          proposalStatus: ProposalStatus.approved,
         },
       });
       // Get supervisor (active assignment)
@@ -94,7 +94,7 @@ export class UserService {
     };
     return createResponse(
       'User profile retrieved',
-      targetUser.role === UserRole.STUDENT
+      targetUser.role === UserRole.student
         ? { ...user, ...studentExtras }
         : { ...user },
     );

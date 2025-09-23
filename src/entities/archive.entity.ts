@@ -6,8 +6,8 @@ import {
 } from 'typeorm';
 
 export enum ProjectCategory {
-  DESIGN = 'DESIGN',
-  RESEARCH = 'RESEARCH',
+  design = 'design',
+  research = 'research',
 }
 
 @Entity('archives')
