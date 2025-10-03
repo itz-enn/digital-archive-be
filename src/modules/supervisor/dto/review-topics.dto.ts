@@ -15,11 +15,11 @@ export class ReviewTopicsDto {
   topicId: number;
 
   @ApiProperty({
-    enum: ['REJECTED', 'APPROVED'],
+    enum: ['rejected', 'approved'],
     description: 'Status of the proposal (Pending Status not allowed)',
   })
-  @IsEnum(['REJECTED', 'APPROVED'], {
-    message: 'status must be one of the following values: REJECTED, APPROVED',
+  @IsEnum(['rejected', 'approved'], {
+    message: 'status must be one of the following values: rejected, approved',
   })
   @IsNotEmpty()
   status: ProposalStatus;

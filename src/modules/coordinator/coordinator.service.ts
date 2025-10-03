@@ -48,7 +48,7 @@ export class CoordinatorService {
 
     delete user.password;
 
-    return createResponse('User created successfully', {
+    return createResponse(200, true, 'User created successfully', {
       ...user,
       department: department?.name ?? null,
     });
@@ -115,7 +115,7 @@ export class CoordinatorService {
     if (assignmentsToSave.length > 0) {
       await this.assignmentRepo.save(assignmentsToSave);
     }
-    return createResponse('Students assigned', assignedStudents);
+    return createResponse(200, true, 'Students assigned', assignedStudents);
   }
 
   async getUsersByFilter(
@@ -159,15 +159,20 @@ export class CoordinatorService {
       .take(limit)
       .getManyAndCount();
 
-    return createResponse(total < 0 ? 'No user found' : 'Users retrieved', {
-      users: users.map((u) => ({
-        ...u,
-        department: u.department?.name ?? null,
-      })),
-      total,
-      page,
-      totalPages: Math.max(1, Math.ceil(total / limit)),
-    });
+    return createResponse(
+      200,
+      true,
+      total < 0 ? 'No user found' : 'Users retrieved',
+      {
+        users: users.map((u) => ({
+          ...u,
+          department: u.department?.name ?? null,
+        })),
+        total,
+        page,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    );
   }
 
   // MANAGING SUPERVISORS
@@ -181,7 +186,7 @@ export class CoordinatorService {
     }
     supervisor.maxStudents = dto.maxStudents;
     await this.userRepo.save(supervisor);
-    return createResponse('Max student limit updated', {});
+    return createResponse(200, true, 'Max student limit updated', {});
   }
 
   // SYSTEM STATISTICS
@@ -191,7 +196,7 @@ export class CoordinatorService {
   async createArchive(dto: CreateArchiveDto) {
     const archive = this.archiveRepo.create(dto);
     await this.archiveRepo.save(archive);
-    return createResponse('Archive created', archive);
+    return createResponse(200, true, 'Archive created', archive);
   }
 
   async updateArchive(id: number, dto: Partial<CreateArchiveDto>) {
@@ -201,7 +206,7 @@ export class CoordinatorService {
     }
     Object.assign(archive, dto);
     const updatedArchive = await this.archiveRepo.save(archive);
-    return createResponse('Archive updated', updatedArchive);
+    return createResponse(200, true, 'Archive updated', updatedArchive);
   }
 
   async deleteArchive(id: number) {
@@ -209,6 +214,6 @@ export class CoordinatorService {
     if (result.affected === 0) {
       throw new NotFoundException('Archive not found');
     }
-    return createResponse('Archive deleted', {});
+    return createResponse(200, true, 'Archive deleted', {});
   }
 }

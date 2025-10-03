@@ -46,7 +46,7 @@ export class AdminService {
       department,
     });
     await this.userRepo.save(coordinator);
-    return createResponse('Coordinator created', {
+    return createResponse(200, true, 'Coordinator created', {
       ...coordinator,
       department: department?.name ?? null,
     });
@@ -56,7 +56,7 @@ export class AdminService {
     const result = await this.userRepo.delete(id);
     if (result.affected === 0)
       throw new NotFoundException('Coordinator not found');
-    return createResponse('Coordinator deleted', {});
+    return createResponse(200, true, 'Coordinator deleted', {});
   }
 
   async getAllCoordinators() {
@@ -66,6 +66,8 @@ export class AdminService {
     });
 
     return createResponse(
+      200,
+      true,
       coordinators.length < 1
         ? 'No coordinator found'
         : 'Coordinators retrieved',
@@ -81,14 +83,14 @@ export class AdminService {
   async createDepartment(dto: CreateDepartmentDto) {
     const department = this.deptRepo.create(dto);
     await this.deptRepo.save(department);
-    return createResponse('Department created', department);
+    return createResponse(200, true, 'Department created', department);
   }
 
   async editDepartment(id: number, dto: Partial<CreateDepartmentDto>) {
     const department = await this.findDepartmentById(id);
     Object.assign(department, dto);
     await this.deptRepo.save(department);
-    return createResponse('Department updated', department);
+    return createResponse(200, true, 'Department updated', department);
   }
 
   async deleteDepartment(id: number) {
@@ -101,12 +103,14 @@ export class AdminService {
     const result = await this.deptRepo.delete(id);
     if (result.affected === 0)
       throw new NotFoundException('Department not found');
-    return createResponse('Department deleted', {});
+    return createResponse(200, true, 'Department deleted', {});
   }
 
   async getAllDepartments() {
     const departments = await this.deptRepo.find();
     return createResponse(
+      200,
+      true,
       departments.length < 1 ? 'No department found' : 'Department found',
       departments,
     );

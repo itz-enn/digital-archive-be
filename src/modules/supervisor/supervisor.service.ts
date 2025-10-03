@@ -73,6 +73,8 @@ export class SupervisorService {
     });
 
     return createResponse(
+      200,
+      true,
       students.length < 1 ? 'No students assigned' : 'Students retrieved',
       students,
     );
@@ -122,6 +124,6 @@ export class SupervisorService {
       topic.reviewer = reviewer.fullName;
     }
     await this.projectRepo.save(topic);
-    return createResponse('Topic reviewed successfully', topic);
+    return createResponse(200, true, 'Topic reviewed successfully', topic);
   }
 }

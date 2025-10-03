@@ -5,7 +5,6 @@ import {
   IsNumber,
   IsOptional,
   IsString,
-  Validate,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserRole } from 'src/entities/user.entity';
@@ -32,12 +31,20 @@ export class CreateUserDto {
   phone?: string;
 
   @ApiProperty({
-    enum: ['SUPERVISOR', 'STUDENT'],
+    enum: ['supervisor', 'student'],
     description: 'Role of the user (admin and coordinator not allowed)',
   })
-  @IsEnum(['SUPERVISOR', 'STUDENT'], {
-    message: 'role must be one of the following values: SUPERVISOR, STUDENT',
+  @IsEnum(['supervisor', 'student'], {
+    message: 'role must be one of the following values: supervisor, student',
   })
   @IsNotEmpty()
   role: UserRole;
+
+  @ApiProperty({
+    description: 'Maximum number of students a supervisor can supervise',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  maxStudents?: number; // only for supervisor
 }

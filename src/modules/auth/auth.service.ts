@@ -38,7 +38,7 @@ export class AuthService {
 
     delete user.password;
 
-    return createResponse('Login successful', {
+    return createResponse(200, true, 'Login successful', {
       access_token: token,
       user: { ...user, department: user.department?.name ?? null },
     });

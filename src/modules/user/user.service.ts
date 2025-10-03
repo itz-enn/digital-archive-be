@@ -93,6 +93,8 @@ export class UserService {
       department: targetUser.department?.name ?? null,
     };
     return createResponse(
+      200,
+      true,
       'User profile retrieved',
       targetUser.role === UserRole.student
         ? { ...user, ...studentExtras }
@@ -104,7 +106,7 @@ export class UserService {
     const user = await this.findUserById(id);
     Object.assign(user, dto);
     await this.userRepo.save(user);
-    return createResponse('User profile updated', {});
+    return createResponse(200, true, 'User profile updated', {});
   }
 
   async getSubmittedTopics(loggedInUserId: number, studentId: number) {
@@ -128,6 +130,8 @@ export class UserService {
     });
 
     return createResponse(
+      200,
+      true,
       projects.length < 1
         ? 'No topics submitted'
         : 'Submitted topics retrieved',
@@ -153,7 +157,7 @@ export class UserService {
 
     if (search) {
       queryBuilder.andWhere(
-        '(archive.title LIKE :search OR archive.student_name LIKE :search OR archive.supervised_by LIKE :search)',
+        '(archive.title LIKE :search OR archive.author LIKE :search OR archive.supervisedBy LIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -176,6 +180,8 @@ export class UserService {
       .getManyAndCount();
 
     return createResponse(
+      200,
+      true,
       total < 0 ? 'No archives found' : 'Archives retrieved',
       {
         archives,
@@ -191,6 +197,6 @@ export class UserService {
     if (!archive) {
       throw new NotFoundException('Archive not found');
     }
-    return createResponse('Archive retrieved', archive);
+    return createResponse(200, true, 'Archive retrieved', archive);
   }
 }
