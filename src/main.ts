@@ -13,6 +13,8 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       envConfig.frontendUrl,
+      'https://digital-archive-pied.vercel.app',
+      'https://digital-archive-pied.vercel.app/',
       'http://localhost:5173',
       'http://localhost:3000',
       'http://localhost:3001',
