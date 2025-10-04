@@ -27,7 +27,7 @@ export class StudentService {
       }),
     );
     await this.projectRepo.save(projects);
-    return createResponse(200, true, 'Project topics submitted', {});
+    return createResponse('Project topics submitted', {});
   }
 
   async deleteTopic(studentId: number, topicId: number) {
@@ -43,7 +43,7 @@ export class StudentService {
       );
     }
     await this.projectRepo.remove(topic);
-    return createResponse(200, true, 'Project topic deleted', {});
+    return createResponse('Project topic deleted', {});
   }
 
   // FILE UPLOAD

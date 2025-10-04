@@ -12,11 +12,6 @@ class SuccessDto<T> {
   }
 }
 
-export function createResponse<T>(
-  statusCode: number,
-  status: boolean,
-  message: string,
-  data: T,
-): SuccessDto<T> {
-  return new SuccessDto<T>(statusCode, status, message, data);
+export function createResponse<T>(message: string, data: T): SuccessDto<T> {
+  return new SuccessDto<T>(200, true, message, data);
 }
