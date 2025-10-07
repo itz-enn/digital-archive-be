@@ -8,6 +8,7 @@ import {
   UseGuards,
   Query,
   NotFoundException,
+  Post,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,6 +26,7 @@ import { ProjectStatus } from 'src/entities/project.entity';
 import { Assignment } from 'src/entities/assignment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { SendNotificationDto } from './dto/send-notification.dto';
 
 @ApiTags('supervisor')
 @ApiBearerAuth()
@@ -93,5 +95,19 @@ export class SupervisorController {
     if (!assignment)
       throw new NotFoundException('You are not assigned to this student');
     return this.studentService.previouslyUploadedFile(id, projectStage);
+  }
+
+  //TODO: test the endpoint
+  @Post('send-notification')
+  @ApiOperation({ summary: 'Send a notification to selected students' })
+  @ApiResponse({ status: 200, description: 'Notification sent' })
+  async sendNotificationToStudents(
+    @Req() req: Request & { user: UserPayload },
+    @Body() dto: SendNotificationDto,
+  ) {
+    return await this.supervisorService.sendNotificationToStudents(
+      req.user.id,
+      dto,
+    );
   }
 }

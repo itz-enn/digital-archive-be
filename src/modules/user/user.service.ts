@@ -13,6 +13,10 @@ import { Assignment } from 'src/entities/assignment.entity';
 import { Project, ProposalStatus } from 'src/entities/project.entity';
 import { ProjectFile } from 'src/entities/project-file';
 import { CloudinaryProvider } from 'src/utils/provider/cloudinary.provider';
+import {
+  Notification,
+  NotificationCategory,
+} from 'src/entities/notification.entity';
 
 @Injectable()
 export class UserService {
@@ -23,6 +27,8 @@ export class UserService {
     private assignmentRepo: Repository<Assignment>,
     @InjectRepository(Project) private projectRepo: Repository<Project>,
     @InjectRepository(ProjectFile) private fileRepo: Repository<ProjectFile>,
+    @InjectRepository(Notification)
+    private notificationRepo: Repository<Notification>,
 
     private readonly cloudinaryProvider: CloudinaryProvider,
   ) {}
@@ -38,6 +44,23 @@ export class UserService {
     if (!user) throw new NotFoundException(`${type} not found`);
     return user;
   }
+
+  async createNotification(
+    message: string,
+    sendTo: number,
+    category: NotificationCategory,
+    initiatedBy?: number,
+  ) {
+    const notification = this.notificationRepo.create({
+      sendTo,
+      message: message.trim(),
+      category,
+      initiatedBy: initiatedBy || null,
+    });
+    await this.notificationRepo.save(notification);
+    return notification;
+  }
+
   // PROFILE SETTING
   async getUserProfile(loggedInId: number, targetId: number) {
     const loggedInUser = await this.findUserById(loggedInId);
@@ -197,7 +220,13 @@ export class UserService {
       );
     }
 
-    //TODO: delete notifications
+    // Delete notifications where sendTo is equal to userId
+    const notifications = await this.notificationRepo.find({
+      where: { sendTo: userId },
+    });
+    if (notifications.length > 0) {
+      await this.notificationRepo.remove(notifications);
+    }
 
     const project = await this.projectRepo.findOne({
       where: { studentId: userId },
@@ -233,5 +262,57 @@ export class UserService {
 
     await this.userRepo.delete(userId);
     return createResponse('User and all associated data deleted', {});
+  }
+
+  async getAndMarkNotifications(
+    userId: number,
+    page: number = 1,
+    limit: number = 10,
+  ) {
+    const [notifications, total] = await this.notificationRepo.findAndCount({
+      where: { sendTo: userId },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    // Mark all as read
+    if (notifications.length > 0) {
+      await this.notificationRepo.update(
+        { sendTo: userId, isRead: false },
+        { isRead: true },
+      );
+    }
+
+    return createResponse(
+      notifications.length < 1
+        ? 'No notifications found'
+        : 'Notifications retrieved',
+      {
+        notifications,
+        currentPage: page,
+        totalNotifications: total,
+        totalPages: Math.max(1, Math.ceil(total / limit)),
+      },
+    );
+  }
+
+  async deleteNotification(userId: number, notificationId: number) {
+    const notification = await this.notificationRepo.findOne({
+      where: { id: notificationId, sendTo: userId },
+    });
+    if (!notification) throw new NotFoundException('Notification not found');
+    await this.notificationRepo.remove(notification);
+    return createResponse('Notification deleted', {});
+  }
+
+  async deleteAllNotifications(userId: number) {
+    const notifications = await this.notificationRepo.find({
+      where: { sendTo: userId },
+    });
+    if (notifications.length < 1)
+      throw new NotFoundException('No notifications found');
+    await this.notificationRepo.remove(notifications);
+    return createResponse('All notifications deleted', {});
   }
 }

@@ -73,7 +73,7 @@ export class StudentController {
         projectFile: {
           type: 'string',
           format: 'binary',
-          description: 'The file to upload',
+          description: 'The file to upload (Max size: 5MB)',
         },
       },
       required: ['projectFile'],

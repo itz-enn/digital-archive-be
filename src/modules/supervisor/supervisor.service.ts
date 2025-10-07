@@ -6,6 +6,11 @@ import { createResponse } from 'src/utils/global/create-response';
 import { UserService } from '../user/user.service';
 import { Assignment } from 'src/entities/assignment.entity';
 import { ReviewTopicsDto } from './dto/review-topics.dto';
+import {
+  Notification,
+  NotificationCategory,
+} from 'src/entities/notification.entity';
+import { SendNotificationDto } from './dto/send-notification.dto';
 
 @Injectable()
 export class SupervisorService {
@@ -13,10 +18,12 @@ export class SupervisorService {
     @InjectRepository(Project) private projectRepo: Repository<Project>,
     @InjectRepository(Assignment)
     private assignmentRepo: Repository<Assignment>,
+    @InjectRepository(Notification)
+    private notificationRepo: Repository<Notification>,
 
     private readonly userService: UserService,
   ) {}
-  
+
   async assignedStudentsBySupervisor(supervisorId: number) {
     const assignedStudents = await this.assignmentRepo.query(
       `
@@ -114,5 +121,19 @@ export class SupervisorService {
     }
     await this.projectRepo.save(topic);
     return createResponse('Topic reviewed successfully', topic);
+  }
+
+  async sendNotificationToStudents(senderId: number, dto: SendNotificationDto) {
+    const { studentIds, message } = dto;
+    const notifications = studentIds.map((studentId) =>
+      this.notificationRepo.create({
+        sendTo: studentId,
+        message,
+        category: NotificationCategory.announcement,
+        initiatedBy: senderId,
+      }),
+    );
+    await this.notificationRepo.save(notifications);
+    return createResponse('Notification sent', {});
   }
 }

@@ -17,7 +17,7 @@ const allowedTypes = /\.(pdf|docx?|xlsx?|pptx?|jpg|jpeg|png)$/i;
 
 export const multerConfig = {
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (
     req: Request,
     file: Express.Multer.File,
