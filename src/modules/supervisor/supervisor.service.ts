@@ -78,17 +78,13 @@ export class SupervisorService {
     );
   }
 
-  async viewAllFilesByStudent() {}
-
   // TOPIC APPROVAL
   async reviewTopics(loggedId: number, dto: ReviewTopicsDto) {
     const { topicId, status, review } = dto;
     const topic = await this.projectRepo.findOne({
       where: { id: topicId },
     });
-    if (!topic) {
-      throw new NotFoundException('Topic not found');
-    }
+    if (!topic) throw new NotFoundException('Topic not found');
 
     // Check if the logged-in supervisor is assigned to the student
     const assignment = await this.assignmentRepo.findOne({
@@ -98,9 +94,8 @@ export class SupervisorService {
         isActive: true,
       },
     });
-    if (!assignment) {
+    if (!assignment)
       throw new NotFoundException('You are not assigned to this student');
-    }
 
     if (status === ProposalStatus.approved) {
       await this.projectRepo

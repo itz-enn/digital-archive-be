@@ -33,9 +33,7 @@ export class CoordinatorService {
     const existingUser = await this.userRepo.findOne({
       where: { institutionId: dto.institutionId },
     });
-    if (existingUser) {
-      throw new ConflictException('User already exists');
-    }
+    if (existingUser) throw new ConflictException('User already exists');
     const { department } = await this.userService.findUserById(id);
 
     const hashedPassword = await bcrypt.hash(dto.institutionId, 10);
@@ -112,9 +110,8 @@ export class CoordinatorService {
       assignedStudents.push(student.institutionId);
     }
     // save all new assignments at once
-    if (assignmentsToSave.length > 0) {
+    if (assignmentsToSave.length > 0)
       await this.assignmentRepo.save(assignmentsToSave);
-    }
     return createResponse('Students assigned', assignedStudents);
   }
 
@@ -176,9 +173,9 @@ export class CoordinatorService {
       dto.supervisorId,
       'Supervisor',
     );
-    if (dto.maxStudents < 0) {
+    if (dto.maxStudents < 0)
       throw new ConflictException('Student limit cannot be negative');
-    }
+
     supervisor.maxStudents = dto.maxStudents;
     await this.userRepo.save(supervisor);
     return createResponse('Max student limit updated', {});
@@ -196,9 +193,7 @@ export class CoordinatorService {
 
   async updateArchive(id: number, dto: Partial<CreateArchiveDto>) {
     const archive = await this.archiveRepo.findOne({ where: { id } });
-    if (!archive) {
-      throw new NotFoundException('Archive not found');
-    }
+    if (!archive) throw new NotFoundException('Archive not found');
     Object.assign(archive, dto);
     const updatedArchive = await this.archiveRepo.save(archive);
     return createResponse('Archive updated', updatedArchive);
@@ -206,9 +201,7 @@ export class CoordinatorService {
 
   async deleteArchive(id: number) {
     const result = await this.archiveRepo.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException('Archive not found');
-    }
+    if (result.affected === 0) throw new NotFoundException('Archive not found');
     return createResponse('Archive deleted', {});
   }
 }

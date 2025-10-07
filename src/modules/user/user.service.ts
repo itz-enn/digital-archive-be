@@ -30,9 +30,7 @@ export class UserService {
       where: { id },
       relations: ['department'],
     });
-    if (!user) {
-      throw new NotFoundException(`${type} not found`);
-    }
+    if (!user) throw new NotFoundException(`${type} not found`);
     return user;
   }
 

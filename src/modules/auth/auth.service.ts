@@ -26,9 +26,8 @@ export class AuthService {
       .where('user.institutionId = :institutionId', { institutionId })
       .addSelect('user.password')
       .getOne();
-    if (!user || !(await bcrypt.compare(password, user.password))) {
+    if (!user || !(await bcrypt.compare(password, user.password)))
       throw new UnauthorizedException('Invalid ID or password');
-    }
 
     const payload: UserPayload = {
       id: user.id,

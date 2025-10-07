@@ -17,9 +17,7 @@ export class AdminService {
 
   private async findDepartmentById(id: number) {
     const department = await this.deptRepo.findOne({ where: { id } });
-    if (!department) {
-      throw new NotFoundException('Department not found');
-    }
+    if (!department) throw new NotFoundException('Department not found');
     return department;
   }
 
@@ -93,11 +91,11 @@ export class AdminService {
 
   async deleteDepartment(id: number) {
     const users = await this.userRepo.find({ where: { department: { id } } });
-    if (users.length > 0) {
+    if (users.length > 0)
       throw new NotFoundException(
         'Cannot delete department: users are connected to this department',
       );
-    }
+
     const result = await this.deptRepo.delete(id);
     if (result.affected === 0)
       throw new NotFoundException('Department not found');

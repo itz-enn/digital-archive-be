@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-// TODO: verify all the enum properties
 export enum ProposalStatus {
   pending = 'pending',
   rejected = 'rejected',
