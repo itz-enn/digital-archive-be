@@ -52,10 +52,6 @@ export class CoordinatorService {
     });
   }
 
-  async getCoordinatorAnalytics() {}
-
-  async getStatistics() {}
-
   // ASSIGNING SUPERVISORS
   async assignStudents(dto: AssignStudentsDto) {
     const supervisor = await this.userService.findUserById(
@@ -180,9 +176,6 @@ export class CoordinatorService {
     await this.userRepo.save(supervisor);
     return createResponse('Max student limit updated', {});
   }
-
-  // SYSTEM STATISTICS
-  async TODO() {}
 
   // ARCHIVE
   async createArchive(dto: CreateArchiveDto) {

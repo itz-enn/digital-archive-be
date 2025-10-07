@@ -16,11 +16,7 @@ export class SupervisorService {
 
     private readonly userService: UserService,
   ) {}
-  // DASHBOARD
-  async getSupervisorAnalytics() {}
-
-  async studentOverview() {}
-
+  
   async assignedStudentsBySupervisor(supervisorId: number) {
     const assignedStudents = await this.assignmentRepo.query(
       `

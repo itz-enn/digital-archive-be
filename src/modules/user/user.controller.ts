@@ -7,6 +7,7 @@ import {
   Req,
   Body,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -141,5 +142,24 @@ export class UserController {
   @ApiResponse({ status: 400, description: 'Archive not found' })
   async getArchiveById(@Param('id') id: string) {
     return await this.userService.getArchiveById(Number(id));
+  }
+
+  @Delete('delete-user/:id')
+  @ApiOperation({ summary: 'Delete a user and all associated data' })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'ID of user to be deleted',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User and all associated data deleted',
+  })
+  @ApiResponse({ status: 400, description: 'User not found' })
+  async deleteUserAndAssociations(
+    @Param('id') id: number,
+    @Req() req: Request & { user: UserPayload },
+  ) {
+    return await this.userService.deleteUserAndAssociations(req.user.id, id);
   }
 }

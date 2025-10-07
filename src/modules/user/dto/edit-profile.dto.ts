@@ -16,4 +16,9 @@ export class EditProfileDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @ApiProperty({ description: 'Institution ID of the user', required: false })
+  @IsOptional()
+  @IsString()
+  institutionId?: string;
 }

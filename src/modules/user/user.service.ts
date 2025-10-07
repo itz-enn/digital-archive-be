@@ -11,6 +11,8 @@ import { User, UserRole } from 'src/entities/user.entity';
 import { EditProfileDto } from './dto/edit-profile.dto';
 import { Assignment } from 'src/entities/assignment.entity';
 import { Project, ProposalStatus } from 'src/entities/project.entity';
+import { ProjectFile } from 'src/entities/project-file';
+import { CloudinaryProvider } from 'src/utils/provider/cloudinary.provider';
 
 @Injectable()
 export class UserService {
@@ -20,6 +22,9 @@ export class UserService {
     @InjectRepository(Assignment)
     private assignmentRepo: Repository<Assignment>,
     @InjectRepository(Project) private projectRepo: Repository<Project>,
+    @InjectRepository(ProjectFile) private fileRepo: Repository<ProjectFile>,
+
+    private readonly cloudinaryProvider: CloudinaryProvider,
   ) {}
 
   async findUserById(
@@ -33,12 +38,6 @@ export class UserService {
     if (!user) throw new NotFoundException(`${type} not found`);
     return user;
   }
-
-  private async createNotification() {}
-
-  // NOTIFICATIONS
-  async getNotification() {}
-
   // PROFILE SETTING
   async getUserProfile(loggedInId: number, targetId: number) {
     const loggedInUser = await this.findUserById(loggedInId);
@@ -133,11 +132,6 @@ export class UserService {
     );
   }
 
-  // SYSTEM PREFERENCES
-  async getPreferences() {}
-
-  async editPreferences() {}
-
   // ARCHIVE
   async getArchives(
     search: string,
@@ -190,5 +184,54 @@ export class UserService {
       throw new NotFoundException('Archive not found');
     }
     return createResponse('Archive retrieved', archive);
+  }
+
+  //TODO: test this endpoint
+  async deleteUserAndAssociations(loggedInUser: number, userId: number) {
+    // Find user
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.role !== UserRole.coordinator && userId !== loggedInUser) {
+      throw new ForbiddenException(
+        'You are not authorized to delete this user',
+      );
+    }
+
+    //TODO: delete notifications
+
+    const project = await this.projectRepo.findOne({
+      where: { studentId: userId },
+    });
+    if (project) {
+      const files = await this.fileRepo.find({
+        where: { projectId: project.id },
+      });
+
+      if (files.length > 0) {
+        let urlsToDelete: string[] = [];
+        for (const file of files) {
+          if (file.filePath) {
+            urlsToDelete.push(file.filePath);
+          }
+          await this.fileRepo.remove(file);
+        }
+        if (urlsToDelete.length > 0) {
+          await this.cloudinaryProvider.deletePdfsFromCloud(urlsToDelete);
+        }
+      }
+
+      await this.projectRepo.remove(project);
+    }
+
+    // Delete assignments (as student or supervisor)
+    const assignments = await this.assignmentRepo.find({
+      where: [{ student: { id: userId } }, { supervisor: { id: userId } }],
+    });
+    if (assignments.length > 0) {
+      await this.assignmentRepo.remove(assignments);
+    }
+
+    await this.userRepo.delete(userId);
+    return createResponse('User and all associated data deleted', {});
   }
 }
