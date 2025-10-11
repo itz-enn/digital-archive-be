@@ -6,6 +6,11 @@ import { createResponse } from 'src/utils/global/create-response';
 import { UserService } from '../user/user.service';
 import { Assignment } from 'src/entities/assignment.entity';
 import { ReviewTopicsDto } from './dto/review-topics.dto';
+import {
+  Notification,
+  NotificationCategory,
+} from 'src/entities/notification.entity';
+import { SendNotificationDto } from './dto/send-notification.dto';
 
 @Injectable()
 export class SupervisorService {
@@ -13,13 +18,11 @@ export class SupervisorService {
     @InjectRepository(Project) private projectRepo: Repository<Project>,
     @InjectRepository(Assignment)
     private assignmentRepo: Repository<Assignment>,
+    @InjectRepository(Notification)
+    private notificationRepo: Repository<Notification>,
 
     private readonly userService: UserService,
   ) {}
-  // DASHBOARD
-  async getSupervisorAnalytics() {}
-
-  async studentOverview() {}
 
   async assignedStudentsBySupervisor(supervisorId: number) {
     const assignedStudents = await this.assignmentRepo.query(
@@ -78,17 +81,13 @@ export class SupervisorService {
     );
   }
 
-  async viewAllFilesByStudent() {}
-
   // TOPIC APPROVAL
   async reviewTopics(loggedId: number, dto: ReviewTopicsDto) {
     const { topicId, status, review } = dto;
     const topic = await this.projectRepo.findOne({
       where: { id: topicId },
     });
-    if (!topic) {
-      throw new NotFoundException('Topic not found');
-    }
+    if (!topic) throw new NotFoundException('Topic not found');
 
     // Check if the logged-in supervisor is assigned to the student
     const assignment = await this.assignmentRepo.findOne({
@@ -98,9 +97,8 @@ export class SupervisorService {
         isActive: true,
       },
     });
-    if (!assignment) {
+    if (!assignment)
       throw new NotFoundException('You are not assigned to this student');
-    }
 
     if (status === ProposalStatus.approved) {
       await this.projectRepo
@@ -123,5 +121,47 @@ export class SupervisorService {
     }
     await this.projectRepo.save(topic);
     return createResponse('Topic reviewed successfully', topic);
+  }
+
+  async sendNotificationToStudents(senderId: number, dto: SendNotificationDto) {
+    const { studentIds, message } = dto;
+    const notifications = studentIds.map((studentId) =>
+      this.notificationRepo.create({
+        sendTo: studentId,
+        message,
+        category: NotificationCategory.announcement,
+        initiatedBy: senderId,
+      }),
+    );
+    await this.notificationRepo.save(notifications);
+    return createResponse('Notification sent', {});
+  }
+
+  async getSupervisorAnalytics(supervisorId: number) {
+    // Total assigned students
+    const totalStudents = await this.assignmentRepo.count({
+      where: { supervisor: { id: supervisorId }, isActive: true },
+    });
+
+    //TODO
+    // total files submitted
+    //total files in reviewing
+    //total files reviewed
+
+    // total 
+    // total proposal in pending status
+    // total proposal in approved status
+    // total projects in rejected status
+
+    // number of student in each stage of project status
+    // get each users approved topic and get recent Project Status
+
+
+    return createResponse('Supervisor analytics retrieved', {
+      totalStudents,
+      // approvedTopics,
+      // pendingTopics,
+      // rejectedTopics,
+    });
   }
 }

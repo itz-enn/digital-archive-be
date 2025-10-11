@@ -5,19 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ProjectStatus } from './project.entity';
 
 export enum FileStatus {
-  //TODO: delete this later
-  //   pending = 'pending',
-  approved = 'approved',
   reviewing = 'reviewing',
-  // revised = 'revised',
-}
-
-export enum FileStage {
-  proposal = 'proposal',
-  chapter = 'chapter',
-  final_report = 'final_report',
+  reviewed = 'reviewed',
 }
 
 @Entity('project_files')
@@ -29,17 +21,13 @@ export class ProjectFile {
   projectId: number;
 
   @Column({ nullable: false })
-  fileName: string;
-
-  @Column({ nullable: false })
-  version: string;
-
-  @Column({ nullable: false })
   filePath: string;
 
-  //TODO: i'll see how this goessss
   @Column({ nullable: false })
-  fileSize: string;
+  fileSize: number;
+
+  @Column({ nullable: false })
+  version: number;
 
   @Column({
     type: 'enum',
@@ -51,10 +39,10 @@ export class ProjectFile {
 
   @Column({
     type: 'enum',
-    enum: FileStage,
+    enum: ProjectStatus,
     nullable: false,
   })
-  fileStage: FileStage;
+  projectStage: ProjectStatus;
 
   @CreateDateColumn({ nullable: false })
   uploadedAt: Date;

@@ -1,18 +1,9 @@
 import { diskStorage, FileFilterCallback } from 'multer';
 import * as path from 'path';
 
-// Organize uploads by projectId and fileStage if available
 const storage = diskStorage({
   destination: (req, file, cb) => {
-    // Example: uploads/{projectId}/{fileStage}
-    const projectId = req.body.projectId || 'general';
-    const fileStage = req.body.fileStage || 'misc';
-    const dest = path.join(
-      'uploads',
-      projectId.toString(),
-      fileStage.toString(),
-    );
-    cb(null, dest);
+    cb(null, 'uploads');
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
@@ -22,12 +13,11 @@ const storage = diskStorage({
   },
 });
 
-// Accept common document and image types
 const allowedTypes = /\.(pdf|docx?|xlsx?|pptx?|jpg|jpeg|png)$/i;
 
 export const multerConfig = {
   storage,
-  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB limit
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (
     req: Request,
     file: Express.Multer.File,

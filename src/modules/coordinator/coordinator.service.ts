@@ -16,6 +16,7 @@ import { AssignStudentsDto } from './dto/assign-students.dto';
 import { Assignment } from 'src/entities/assignment.entity';
 import { StudentLimitDto } from './dto/student-limit.dto';
 import { UserService } from '../user/user.service';
+import { ProjectStatus, ProposalStatus } from 'src/entities/project.entity';
 
 @Injectable()
 export class CoordinatorService {
@@ -33,9 +34,7 @@ export class CoordinatorService {
     const existingUser = await this.userRepo.findOne({
       where: { institutionId: dto.institutionId },
     });
-    if (existingUser) {
-      throw new ConflictException('User already exists');
-    }
+    if (existingUser) throw new ConflictException('User already exists');
     const { department } = await this.userService.findUserById(id);
 
     const hashedPassword = await bcrypt.hash(dto.institutionId, 10);
@@ -53,10 +52,6 @@ export class CoordinatorService {
       department: department?.name ?? null,
     });
   }
-
-  async getCoordinatorAnalytics() {}
-
-  async getStatistics() {}
 
   // ASSIGNING SUPERVISORS
   async assignStudents(dto: AssignStudentsDto) {
@@ -112,9 +107,8 @@ export class CoordinatorService {
       assignedStudents.push(student.institutionId);
     }
     // save all new assignments at once
-    if (assignmentsToSave.length > 0) {
+    if (assignmentsToSave.length > 0)
       await this.assignmentRepo.save(assignmentsToSave);
-    }
     return createResponse('Students assigned', assignedStudents);
   }
 
@@ -176,16 +170,13 @@ export class CoordinatorService {
       dto.supervisorId,
       'Supervisor',
     );
-    if (dto.maxStudents < 0) {
+    if (dto.maxStudents < 0)
       throw new ConflictException('Student limit cannot be negative');
-    }
+
     supervisor.maxStudents = dto.maxStudents;
     await this.userRepo.save(supervisor);
     return createResponse('Max student limit updated', {});
   }
-
-  // SYSTEM STATISTICS
-  async TODO() {}
 
   // ARCHIVE
   async createArchive(dto: CreateArchiveDto) {
@@ -196,9 +187,7 @@ export class CoordinatorService {
 
   async updateArchive(id: number, dto: Partial<CreateArchiveDto>) {
     const archive = await this.archiveRepo.findOne({ where: { id } });
-    if (!archive) {
-      throw new NotFoundException('Archive not found');
-    }
+    if (!archive) throw new NotFoundException('Archive not found');
     Object.assign(archive, dto);
     const updatedArchive = await this.archiveRepo.save(archive);
     return createResponse('Archive updated', updatedArchive);
@@ -206,9 +195,68 @@ export class CoordinatorService {
 
   async deleteArchive(id: number) {
     const result = await this.archiveRepo.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException('Archive not found');
-    }
+    if (result.affected === 0) throw new NotFoundException('Archive not found');
     return createResponse('Archive deleted', {});
+  }
+
+  async getCoordinatorAnalytics(userId: number) {
+    const coordinator = await this.userService.findUserById(userId);
+
+    const usersInTheDept = await this.userRepo.find({
+      where: {
+        department: { id: coordinator.department.id },
+      },
+    });
+    const students = usersInTheDept.filter((u) => u.role === UserRole.student);
+    const supervisors = usersInTheDept.filter(
+      (u) => u.role === UserRole.supervisor,
+    );
+    const assignedStudents = students.filter((u) => u.isAssigned).length;
+    const unassignedStudents = students.filter((u) => !u.isAssigned).length;
+    const activeSupervisors = supervisors.filter(
+      (s) => s.status === UserStatus.active,
+    ).length;
+    const inactiveSupervisors = supervisors.filter(
+      (s) => s.status === UserStatus.inactive,
+    ).length;
+
+    // Get all students' ids in the department
+    const studentIds = students.map((s) => s.id);
+    const projects = await this.userRepo.manager
+      .getRepository('Project')
+      .createQueryBuilder('project')
+      .where('project.studentId IN (:...studentIds)', { studentIds })
+      .getMany();
+    const approvedTopics = projects.filter(
+      (p) => p.status === ProposalStatus.approved,
+    ).length;
+    const pendingTopics = projects.filter(
+      (p) => p.status === ProposalStatus.pending,
+    ).length;
+    const rejectedTopics = projects.filter(
+      (p) => p.status === ProposalStatus.rejected,
+    ).length;
+
+    //TODO: start from here when I'm done
+    const projectStatusCounts = projects.reduce(
+      (acc, project) => {
+        acc[project.status] = (acc[project.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    // total students at different stage of project
+
+    return createResponse('Coordinator analytics retrieved', {
+      students: students.length,
+      supervisors: supervisors.length,
+      assignedStudents,
+      unassignedStudents,
+      activeSupervisors,
+      inactiveSupervisors,
+      approvedTopics,
+      pendingTopics,
+      rejectedTopics,
+    });
   }
 }

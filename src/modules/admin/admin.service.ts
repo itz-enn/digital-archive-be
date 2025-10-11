@@ -17,9 +17,7 @@ export class AdminService {
 
   private async findDepartmentById(id: number) {
     const department = await this.deptRepo.findOne({ where: { id } });
-    if (!department) {
-      throw new NotFoundException('Department not found');
-    }
+    if (!department) throw new NotFoundException('Department not found');
     return department;
   }
 
@@ -93,11 +91,11 @@ export class AdminService {
 
   async deleteDepartment(id: number) {
     const users = await this.userRepo.find({ where: { department: { id } } });
-    if (users.length > 0) {
+    if (users.length > 0)
       throw new NotFoundException(
         'Cannot delete department: users are connected to this department',
       );
-    }
+
     const result = await this.deptRepo.delete(id);
     if (result.affected === 0)
       throw new NotFoundException('Department not found');
@@ -110,5 +108,48 @@ export class AdminService {
       departments.length < 1 ? 'No department found' : 'Department found',
       departments,
     );
+  }
+
+  //TODO: test this endpoint
+  async getAdminAnalytics(userId: number) {
+    // Fetch departments with their users in a single query
+    const departments = await this.deptRepo.find();
+
+    // Fetch all coordinators and supervisors in one query
+    const users = await this.userRepo.find({
+      where: [
+        { role: UserRole.coordinator },
+        { role: UserRole.supervisor },
+        { role: UserRole.student },
+      ],
+      relations: ['department'],
+    });
+
+    const totalCoordinators = users.filter(
+      (u) => u.role === UserRole.coordinator,
+    ).length;
+
+    // Example: department-wise stats (optional)
+    const departmentStats = departments.map((dept) => {
+      const stats = users.reduce(
+        (acc, user) => {
+          const deptName = user.department?.name || 'Unknown';
+          if (deptName === dept.name) {
+            if (user.role === UserRole.supervisor) acc.supervisors++;
+            if (user.role === UserRole.student) acc.students++;
+          }
+          return acc;
+        },
+        { name: dept.name, students: 0, supervisors: 0 },
+      );
+
+      return stats;
+    });
+
+    return createResponse('Admin analytics retrieved', {
+      totalDepartments: departments.length,
+      totalCoordinators,
+      departmentStats,
+    });
   }
 }

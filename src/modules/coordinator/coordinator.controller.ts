@@ -48,20 +48,6 @@ export class CoordinatorController {
     return await this.coordinatorService.createUserAccount(req.user.id, dto);
   }
 
-  // @Post('analytics')
-  // @ApiOperation({ summary: 'Get coordinator analytics' })
-  // @ApiResponse({ status: 200, description: 'Analytics data' })
-  // async getCoordinatorAnalytics(@Req() req: Request & { user: UserPayload }) {
-  //   return await this.coordinatorService.getCoordinatorAnalytics(req.user.id);
-  // }
-
-  // @Post('statistics')
-  // @ApiOperation({ summary: 'Get statistics' })
-  // @ApiResponse({ status: 200, description: 'Statistics data' })
-  // async getStatistics(@Req() req: Request & { user: UserPayload }) {
-  //   return await this.coordinatorService.getStatistics(req.user.id);
-  // }
-
   @Post('assign-students')
   @ApiOperation({ summary: 'Assign and reassign students to supervisors' })
   @ApiResponse({ status: 200, description: 'Students assigned' })
@@ -166,4 +152,13 @@ export class CoordinatorController {
   async deleteArchive(@Param('id') id: string) {
     return await this.coordinatorService.deleteArchive(Number(id));
   }
+
+  // @Get('coordinator-analytics')
+  // @UseGuards(JwtAuthGuard)
+  // @ApiBearerAuth()
+  // @ApiOperation({ summary: 'Get analytics for coordinator dashboard' })
+  // @ApiResponse({ status: 200, description: 'Coordinator analytics retrieved' })
+  // async getCoordinatorAnalytics(@Req() req: Request & { user: UserPayload }) {
+  //   return await this.coordinatorService.getCoordinatorAnalytics(req.user.id);
+  // }
 }

@@ -34,12 +34,6 @@ async function bootstrap() {
       'The api documentation for Digital Archives of Final Year Projects',
     )
     .setVersion('1.0')
-    .addTag('auth')
-    .addTag('admin')
-    .addTag('coordinator')
-    .addTag('user')
-    .addTag('supervisor')
-    .addTag('student')
     .addBearerAuth()
     .build();
 

@@ -6,23 +6,21 @@ import {
 } from 'typeorm';
 
 export enum NotificationCategory {
-  system = 'system',
-  user = 'user',
-  project = 'project',
+  announcement = 'announcement',
 }
 
-@Entity()
+@Entity('notifications')
 export class Notification {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ nullable: false })
   message: string;
 
-  @Column()
+  @Column({ nullable: true })
   initiatedBy: number;
 
-  @Column()
+  @Column({ nullable: false })
   sendTo: number;
 
   @Column({
@@ -32,8 +30,8 @@ export class Notification {
   })
   category: NotificationCategory;
 
-  @Column({ default: false })
-  read: boolean;
+  @Column({ nullable: false, default: false })
+  isRead: boolean;
 
   @CreateDateColumn()
   createdAt: Date;

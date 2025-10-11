@@ -7,6 +7,7 @@ import {
   Get,
   UseGuards,
   Put,
+  Req,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -21,6 +22,7 @@ import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UserRole } from 'src/entities/user.entity';
 import { RoleGuard } from 'src/utils/guards/role.guard';
 import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
+import { UserPayload } from 'express';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -94,4 +96,11 @@ export class AdminController {
   async getAllDepartments() {
     return await this.adminService.getAllDepartments();
   }
+
+  // @ApiOperation({ summary: 'Get analytics for admin dashboard' })
+  // @ApiResponse({ status: 200, description: 'Admin analytics retrieved' })
+  // @Get('admin-analytics')
+  // async getAdminAnalytics(@Req() req: Request & { user: UserPayload }) {
+  //   return await this.adminService.getAdminAnalytics(req.user.id);
+  // }
 }
