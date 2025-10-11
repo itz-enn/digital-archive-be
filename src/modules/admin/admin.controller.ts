@@ -97,10 +97,10 @@ export class AdminController {
     return await this.adminService.getAllDepartments();
   }
 
-  @ApiOperation({ summary: 'Get analytics for admin dashboard' })
-  @ApiResponse({ status: 200, description: 'Admin analytics retrieved' })
-  @Get('admin-analytics')
-  async getAdminAnalytics(@Req() req: Request & { user: UserPayload }) {
-    return await this.adminService.getAdminAnalytics(req.user.id);
-  }
+  // @ApiOperation({ summary: 'Get analytics for admin dashboard' })
+  // @ApiResponse({ status: 200, description: 'Admin analytics retrieved' })
+  // @Get('admin-analytics')
+  // async getAdminAnalytics(@Req() req: Request & { user: UserPayload }) {
+  //   return await this.adminService.getAdminAnalytics(req.user.id);
+  // }
 }

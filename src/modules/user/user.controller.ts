@@ -166,52 +166,52 @@ export class UserController {
   }
 
   //Test these endpoints
-  @Get('notifications')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Get all notifications for user and mark them as read',
-  })
-  @ApiResponse({ status: 200, description: 'Notifications retrieved' })
-  @ApiQuery({ name: 'page', type: Number, description: 'Page number' })
-  @ApiQuery({
-    name: 'limit',
-    type: Number,
-    description: 'Items per page. Defaults to 10 if not provided',
-  })
-  async getNotifications(
-    @Req() req: Request & { user: UserPayload },
-    @Query('page') page: number,
-    @Query('limit') limit: number,
-  ) {
-    return await this.userService.getAndMarkNotifications(
-      req.user.id,
-      page,
-      limit,
-    );
-  }
+  // @Get('notifications')
+  // @UseGuards(JwtAuthGuard)
+  // @ApiBearerAuth()
+  // @ApiOperation({
+  //   summary: 'Get all notifications for user and mark them as read',
+  // })
+  // @ApiResponse({ status: 200, description: 'Notifications retrieved' })
+  // @ApiQuery({ name: 'page', type: Number, description: 'Page number' })
+  // @ApiQuery({
+  //   name: 'limit',
+  //   type: Number,
+  //   description: 'Items per page. Defaults to 10 if not provided',
+  // })
+  // async getNotifications(
+  //   @Req() req: Request & { user: UserPayload },
+  //   @Query('page') page: number,
+  //   @Query('limit') limit: number,
+  // ) {
+  //   return await this.userService.getAndMarkNotifications(
+  //     req.user.id,
+  //     page,
+  //     limit,
+  //   );
+  // }
 
-  @Delete('notification/:id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete a single notification by ID' })
-  @ApiParam({ name: 'id', type: Number, description: 'Notification ID' })
-  @ApiResponse({ status: 200, description: 'Notification deleted' })
-  @ApiResponse({ status: 400, description: 'Notification not found' })
-  async deleteNotification(
-    @Req() req: Request & { user: UserPayload },
-    @Param('id') id: number,
-  ) {
-    return await this.userService.deleteNotification(req.user.id, id);
-  }
+  // @Delete('notification/:id')
+  // @UseGuards(JwtAuthGuard)
+  // @ApiBearerAuth()
+  // @ApiOperation({ summary: 'Delete a single notification by ID' })
+  // @ApiParam({ name: 'id', type: Number, description: 'Notification ID' })
+  // @ApiResponse({ status: 200, description: 'Notification deleted' })
+  // @ApiResponse({ status: 400, description: 'Notification not found' })
+  // async deleteNotification(
+  //   @Req() req: Request & { user: UserPayload },
+  //   @Param('id') id: number,
+  // ) {
+  //   return await this.userService.deleteNotification(req.user.id, id);
+  // }
 
-  @Delete('notifications')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete all notifications for the user' })
-  @ApiResponse({ status: 200, description: 'All notifications deleted' })
-  @ApiResponse({ status: 400, description: 'Notification not found' })
-  async deleteAllNotifications(@Req() req: Request & { user: UserPayload }) {
-    return await this.userService.deleteAllNotifications(req.user.id);
-  }
+  // @Delete('notifications')
+  // @UseGuards(JwtAuthGuard)
+  // @ApiBearerAuth()
+  // @ApiOperation({ summary: 'Delete all notifications for the user' })
+  // @ApiResponse({ status: 200, description: 'All notifications deleted' })
+  // @ApiResponse({ status: 400, description: 'Notification not found' })
+  // async deleteAllNotifications(@Req() req: Request & { user: UserPayload }) {
+  //   return await this.userService.deleteAllNotifications(req.user.id);
+  // }
 }

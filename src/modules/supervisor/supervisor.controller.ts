@@ -84,7 +84,6 @@ export class SupervisorController {
     @Req() req: Request & { user: UserPayload },
     @Query('projectStage') projectStage?: ProjectStatus,
   ) {
-    //TODO: test endpoint
     const assignment = await this.assignmentRepo.findOne({
       where: {
         student: { id },
@@ -98,23 +97,23 @@ export class SupervisorController {
   }
 
   //TODO: test the endpoint
-  @Post('send-notification')
-  @ApiOperation({ summary: 'Send a notification to selected students' })
-  @ApiResponse({ status: 200, description: 'Notification sent' })
-  async sendNotificationToStudents(
-    @Req() req: Request & { user: UserPayload },
-    @Body() dto: SendNotificationDto,
-  ) {
-    return await this.supervisorService.sendNotificationToStudents(
-      req.user.id,
-      dto,
-    );
-  }
+  // @Post('send-notification')
+  // @ApiOperation({ summary: 'Send a notification to selected students' })
+  // @ApiResponse({ status: 200, description: 'Notification sent' })
+  // async sendNotificationToStudents(
+  //   @Req() req: Request & { user: UserPayload },
+  //   @Body() dto: SendNotificationDto,
+  // ) {
+  //   return await this.supervisorService.sendNotificationToStudents(
+  //     req.user.id,
+  //     dto,
+  //   );
+  // }
 
-  @ApiOperation({ summary: 'Get analytics for supervisor dashboard' })
-  @ApiResponse({ status: 200, description: 'Supervisor analytics retrieved' })
-  @Get('analytics')
-  async getSupervisorAnalytics(@Req() req: Request & { user: UserPayload }) {
-    return await this.supervisorService.getSupervisorAnalytics(req.user.id);
-  }
+  // @ApiOperation({ summary: 'Get analytics for supervisor dashboard' })
+  // @ApiResponse({ status: 200, description: 'Supervisor analytics retrieved' })
+  // @Get('analytics')
+  // async getSupervisorAnalytics(@Req() req: Request & { user: UserPayload }) {
+  //   return await this.supervisorService.getSupervisorAnalytics(req.user.id);
+  // }
 }

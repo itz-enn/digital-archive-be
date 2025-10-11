@@ -63,7 +63,6 @@ export class StudentController {
     return await this.studentService.deleteTopic(req.user.id, topicId);
   }
 
-  //TODO: test these endpoints
   @ApiOperation({ summary: 'Upload a project file' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -123,10 +122,10 @@ export class StudentController {
     return this.studentService.deleteFile(req.user.id, id);
   }
 
-  @ApiOperation({ summary: 'Get analytics for student dashboard' })
-  @ApiResponse({ status: 200, description: 'Student analytics retrieved' })
-  @Get('analytics')
-  async getStudentAnalytics(@Req() req: Request & { user: UserPayload }) {
-    return await this.studentService.getStudentAnalytics(req.user.id);
-  }
+  // @ApiOperation({ summary: 'Get analytics for student dashboard' })
+  // @ApiResponse({ status: 200, description: 'Student analytics retrieved' })
+  // @Get('analytics')
+  // async getStudentAnalytics(@Req() req: Request & { user: UserPayload }) {
+  //   return await this.studentService.getStudentAnalytics(req.user.id);
+  // }
 }
