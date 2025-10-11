@@ -136,4 +136,32 @@ export class SupervisorService {
     await this.notificationRepo.save(notifications);
     return createResponse('Notification sent', {});
   }
+
+  async getSupervisorAnalytics(supervisorId: number) {
+    // Total assigned students
+    const totalStudents = await this.assignmentRepo.count({
+      where: { supervisor: { id: supervisorId }, isActive: true },
+    });
+
+    //TODO
+    // total files submitted
+    //total files in reviewing
+    //total files reviewed
+
+    // total 
+    // total proposal in pending status
+    // total proposal in approved status
+    // total projects in rejected status
+
+    // number of student in each stage of project status
+    // get each users approved topic and get recent Project Status
+
+
+    return createResponse('Supervisor analytics retrieved', {
+      totalStudents,
+      // approvedTopics,
+      // pendingTopics,
+      // rejectedTopics,
+    });
+  }
 }

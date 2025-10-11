@@ -87,7 +87,7 @@ export class StudentController {
     @UploadedFile() file: Express.Multer.File,
     @Req() req: Request & { user: UserPayload },
   ) {
-    if (!file) throw new UnauthorizedException('no file uploaded');
+    if (!file) throw new UnauthorizedException('No file uploaded');
     return this.studentService.uploadFile(req.user.id, file.path);
   }
 
@@ -121,5 +121,12 @@ export class StudentController {
     @Param('id') id: number,
   ) {
     return this.studentService.deleteFile(req.user.id, id);
+  }
+
+  @ApiOperation({ summary: 'Get analytics for student dashboard' })
+  @ApiResponse({ status: 200, description: 'Student analytics retrieved' })
+  @Get('analytics')
+  async getStudentAnalytics(@Req() req: Request & { user: UserPayload }) {
+    return await this.studentService.getStudentAnalytics(req.user.id);
   }
 }

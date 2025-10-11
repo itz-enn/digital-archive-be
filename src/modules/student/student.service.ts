@@ -1,10 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Project, ProjectStatus } from 'src/entities/project.entity';
+import { In, Repository } from 'typeorm';
+import {
+  Project,
+  ProjectStatus,
+  ProposalStatus,
+} from 'src/entities/project.entity';
 import { createResponse } from 'src/utils/global/create-response';
 import { SubmitTopicsDto } from './dto/submit-topics.dto';
-import { ProjectFile, FileStatus } from 'src/entities/project-file';
+import { ProjectFile, FileStatus } from 'src/entities/project-file.entity';
 import { CloudinaryProvider } from 'src/utils/provider/cloudinary.provider';
 import * as path from 'path';
 import * as fs from 'fs';
@@ -51,9 +59,12 @@ export class StudentService {
   async uploadFile(studentId: number, filePath: string) {
     const user = await this.userService.findUserById(studentId, 'Student');
     const project = await this.projectRepo.findOne({
-      where: { id: studentId },
+      where: { studentId, proposalStatus: ProposalStatus.approved },
     });
-    if (!project) throw new NotFoundException('Project not found');
+    if (!project) {
+      await fs.promises.unlink(filePath).catch(() => {});
+      throw new NotFoundException('Project not found');
+    }
 
     const latestFile = await this.fileRepo.findOne({
       where: { projectId: project.id },
@@ -69,7 +80,13 @@ export class StudentService {
 
     let response;
     try {
-      response = await this.cloudinaryProvider.uploadDocumentToCloud(newPath);
+      try {
+        response = await this.cloudinaryProvider.uploadDocumentToCloud(newPath);
+      } catch (error) {
+        // Clean up the file if upbload fails
+        await fs.promises.unlink(newPath).catch(() => {});
+        throw new BadRequestException('File upload failed');
+      }
     } finally {
       // Ensure cleanup even if upload fails
       await fs.promises.unlink(newPath).catch(() => {});
@@ -92,9 +109,11 @@ export class StudentService {
     studentId: number,
     projectStage?: ProjectStatus,
   ) {
-    const project = await this.projectRepo.findOne({ where: { studentId } });
-    //TODO: handle no project case
-    //TODO: finOneProject as a single function
+    const project = await this.projectRepo.findOne({
+      where: { studentId, proposalStatus: ProposalStatus.approved },
+    });
+    console.log('Approved project found:', project);
+    if (!project) throw new NotFoundException('Project not found');
 
     const where: any = { projectId: project.id };
     if (projectStage) {
@@ -125,8 +144,44 @@ export class StudentService {
         .deletePdfsFromCloud([file.filePath])
         .catch(() => {});
     }
-
+    return
     await this.fileRepo.remove(file);
     return createResponse('File deleted successfully', {});
+  }
+
+  async getStudentAnalytics(studentId: number) {
+    // Get all topics for the student in one query
+    const projects = await this.projectRepo.find({ where: { studentId } });
+
+    // Calculate counts in-memory
+    const totalTopicsSubmitted = projects.length;
+    const approvedTopics = projects.filter(
+      (t) => t.proposalStatus === ProposalStatus.approved,
+    ).length;
+    const pendingTopics = projects.filter(
+      (t) => t.proposalStatus === ProposalStatus.pending,
+    ).length;
+    const rejectedTopics = projects.filter(
+      (t) => t.proposalStatus === ProposalStatus.rejected,
+    ).length;
+
+    // Total files uploaded
+    let totalFiles = 0;
+    const approvedProject = projects.find(
+      (t) => t.proposalStatus === ProposalStatus.approved,
+    );
+    if (approvedProject) {
+      totalFiles = await this.fileRepo.count({
+        where: { projectId: approvedProject.id },
+      });
+    }
+
+    return createResponse('Student analytics retrieved', {
+      totalTopicsSubmitted,
+      approvedTopics,
+      pendingTopics,
+      rejectedTopics,
+      totalFiles,
+    });
   }
 }

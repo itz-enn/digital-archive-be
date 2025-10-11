@@ -11,7 +11,7 @@ import { User, UserRole } from 'src/entities/user.entity';
 import { EditProfileDto } from './dto/edit-profile.dto';
 import { Assignment } from 'src/entities/assignment.entity';
 import { Project, ProposalStatus } from 'src/entities/project.entity';
-import { ProjectFile } from 'src/entities/project-file';
+import { ProjectFile } from 'src/entities/project-file.entity';
 import { CloudinaryProvider } from 'src/utils/provider/cloudinary.provider';
 import {
   Notification,

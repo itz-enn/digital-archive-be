@@ -16,6 +16,7 @@ import { AssignStudentsDto } from './dto/assign-students.dto';
 import { Assignment } from 'src/entities/assignment.entity';
 import { StudentLimitDto } from './dto/student-limit.dto';
 import { UserService } from '../user/user.service';
+import { ProjectStatus, ProposalStatus } from 'src/entities/project.entity';
 
 @Injectable()
 export class CoordinatorService {
@@ -196,5 +197,66 @@ export class CoordinatorService {
     const result = await this.archiveRepo.delete(id);
     if (result.affected === 0) throw new NotFoundException('Archive not found');
     return createResponse('Archive deleted', {});
+  }
+
+  async getCoordinatorAnalytics(userId: number) {
+    const coordinator = await this.userService.findUserById(userId);
+
+    const usersInTheDept = await this.userRepo.find({
+      where: {
+        department: { id: coordinator.department.id },
+      },
+    });
+    const students = usersInTheDept.filter((u) => u.role === UserRole.student);
+    const supervisors = usersInTheDept.filter(
+      (u) => u.role === UserRole.supervisor,
+    );
+    const assignedStudents = students.filter((u) => u.isAssigned).length;
+    const unassignedStudents = students.filter((u) => !u.isAssigned).length;
+    const activeSupervisors = supervisors.filter(
+      (s) => s.status === UserStatus.active,
+    ).length;
+    const inactiveSupervisors = supervisors.filter(
+      (s) => s.status === UserStatus.inactive,
+    ).length;
+
+    // Get all students' ids in the department
+    const studentIds = students.map((s) => s.id);
+    const projects = await this.userRepo.manager
+      .getRepository('Project')
+      .createQueryBuilder('project')
+      .where('project.studentId IN (:...studentIds)', { studentIds })
+      .getMany();
+    const approvedTopics = projects.filter(
+      (p) => p.status === ProposalStatus.approved,
+    ).length;
+    const pendingTopics = projects.filter(
+      (p) => p.status === ProposalStatus.pending,
+    ).length;
+    const rejectedTopics = projects.filter(
+      (p) => p.status === ProposalStatus.rejected,
+    ).length;
+
+    //TODO: start from here when I'm done
+    const projectStatusCounts = projects.reduce(
+      (acc, project) => {
+        acc[project.status] = (acc[project.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+    // total students at different stage of project
+
+    return createResponse('Coordinator analytics retrieved', {
+      students: students.length,
+      supervisors: supervisors.length,
+      assignedStudents,
+      unassignedStudents,
+      activeSupervisors,
+      inactiveSupervisors,
+      approvedTopics,
+      pendingTopics,
+      rejectedTopics,
+    });
   }
 }

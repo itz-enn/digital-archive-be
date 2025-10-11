@@ -4,7 +4,7 @@ export class UserCron {
   constructor() {}
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async deleteUser30daysAfterProjectCompleted() {
-    //TODO: come back for this todo
+    //TODO: come back for this 
 
   }
 }

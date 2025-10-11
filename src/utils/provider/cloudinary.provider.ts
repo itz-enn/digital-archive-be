@@ -48,6 +48,8 @@ export class CloudinaryProvider {
         invalidate: true,
         resource_type: 'raw',
       };
+      console.log(await cloudinary.api.delete_resources(publicIds, options));
+      return;
       return await cloudinary.api.delete_resources(publicIds, options);
     } catch (error) {
       console.error('Error deleting Pdfs:', error);

@@ -110,4 +110,11 @@ export class SupervisorController {
       dto,
     );
   }
+
+  @ApiOperation({ summary: 'Get analytics for supervisor dashboard' })
+  @ApiResponse({ status: 200, description: 'Supervisor analytics retrieved' })
+  @Get('analytics')
+  async getSupervisorAnalytics(@Req() req: Request & { user: UserPayload }) {
+    return await this.supervisorService.getSupervisorAnalytics(req.user.id);
+  }
 }
