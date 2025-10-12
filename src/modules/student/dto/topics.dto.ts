@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PartialType } from '@nestjs/swagger';
 import {
   IsString,
   ValidateNested,
@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class TopicDto {
+class TopicDto {
   @ApiProperty({ description: 'Title of the project' })
   @IsNotEmpty()
   @IsString()
@@ -35,3 +35,5 @@ export class SubmitTopicsDto {
   @ArrayMaxSize(3)
   topics: TopicDto[];
 }
+
+export class UpdateTopicDto extends PartialType(TopicDto) {}

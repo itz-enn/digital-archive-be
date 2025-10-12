@@ -6,12 +6,12 @@ import {
   UseGuards,
   Param,
   Delete,
-  Patch,
   UseInterceptors,
   UploadedFile,
   UnauthorizedException,
   Get,
   Query,
+  Put,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,14 +22,16 @@ import {
   ApiConsumes,
   ApiQuery,
   ApiBody,
+  PartialType,
 } from '@nestjs/swagger';
 import { StudentService } from './student.service';
-import { SubmitTopicsDto } from './dto/submit-topics.dto';
+import { SubmitTopicsDto, UpdateTopicDto } from './dto/topics.dto';
 import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
 import { UserPayload } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/utils/config/multer.config';
 import { ProjectStatus } from 'src/entities/project.entity';
+import { FileType } from 'src/entities/project-file.entity';
 
 @ApiTags('student')
 @ApiBearerAuth()
@@ -49,8 +51,26 @@ export class StudentController {
   }
 
   @ApiOperation({
+    summary: 'Update a project topic (only pending topics can be updated)',
+  })
+  @ApiResponse({ status: 200, description: 'Project topic updated' })
+  @ApiResponse({
+    status: 400,
+    description: 'Topic not found or cannot be updated',
+  })
+  @ApiParam({ name: 'id', type: Number, description: 'Topic ID' })
+  @Put('topic/:id')
+  async updateTopic(
+    @Req() req: Request & { user: UserPayload },
+    @Param('id') topicId: number,
+    @Body() dto: UpdateTopicDto,
+  ) {
+    return await this.studentService.updateTopic(req.user.id, topicId, dto);
+  }
+
+  @ApiOperation({
     summary:
-      'Delete a project topic. (Only topics in PROPOSAL stage can be deleted)',
+      'Delete a project topic. (Only pending and rejected topics can be deleted)',
   })
   @ApiResponse({ status: 200, description: 'Project topic deleted' })
   @ApiResponse({ status: 400, description: 'Topic not found' })
@@ -65,6 +85,7 @@ export class StudentController {
 
   @ApiOperation({ summary: 'Upload a project file' })
   @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', type: Number, description: 'Project ID' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -81,13 +102,14 @@ export class StudentController {
   @ApiResponse({ status: 200, description: 'File uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Project not found' })
   @UseInterceptors(FileInterceptor('projectFile', multerConfig))
-  @Post('upload-file')
+  @Post('upload-file/:id')
   async uploadFile(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: Request & { user: UserPayload },
+    @Param('id') id: number,
   ) {
     if (!file) throw new UnauthorizedException('No file uploaded');
-    return this.studentService.uploadFile(req.user.id, file.path);
+    return this.studentService.uploadFile(req.user.id, id, file.path);
   }
 
   @ApiOperation({ summary: 'Get previously uploaded files' })
@@ -99,14 +121,22 @@ export class StudentController {
     enum: ProjectStatus,
     description: 'Filter by project stage',
   })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    enum: FileType,
+    description: 'Filter by file type',
+  })
   @Get('uploaded-files')
   async previouslyUploadedFile(
     @Req() req: Request & { user: UserPayload },
     @Query('projectStage') projectStage?: ProjectStatus,
+    @Query('type') type?: FileType,
   ) {
     return this.studentService.previouslyUploadedFile(
       req.user.id,
       projectStage,
+      type
     );
   }
 

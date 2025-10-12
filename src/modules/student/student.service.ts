@@ -4,25 +4,29 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import {
   Project,
   ProjectStatus,
   ProposalStatus,
 } from 'src/entities/project.entity';
 import { createResponse } from 'src/utils/global/create-response';
-import { SubmitTopicsDto } from './dto/submit-topics.dto';
-import { ProjectFile, FileStatus } from 'src/entities/project-file.entity';
+import { SubmitTopicsDto, UpdateTopicDto } from './dto/topics.dto';
+import { FileType, ProjectFile } from 'src/entities/project-file.entity';
 import { CloudinaryProvider } from 'src/utils/provider/cloudinary.provider';
 import * as path from 'path';
 import * as fs from 'fs';
 import { UserService } from '../user/user.service';
+import { UserRole } from 'src/entities/user.entity';
+import { Assignment } from 'src/entities/assignment.entity';
 
 @Injectable()
 export class StudentService {
   constructor(
     @InjectRepository(Project) private projectRepo: Repository<Project>,
     @InjectRepository(ProjectFile) private fileRepo: Repository<ProjectFile>,
+    @InjectRepository(Assignment)
+    private assignmentRepo: Repository<Assignment>,
 
     private readonly cloudinaryProvider: CloudinaryProvider,
     private readonly userService: UserService,
@@ -41,83 +45,133 @@ export class StudentService {
     return createResponse('Project topics submitted', {});
   }
 
+  async updateTopic(studentId: number, topicId: number, dto: UpdateTopicDto) {
+    const topic = await this.projectRepo.findOne({
+      where: { id: topicId, studentId },
+    });
+    if (!topic) throw new NotFoundException('Topic not found');
+
+    if (topic.proposalStatus !== ProposalStatus.pending)
+      throw new BadRequestException('Only pending topics can be updated');
+
+    if (dto.title !== undefined) topic.title = dto.title;
+    if (dto.description !== undefined) topic.description = dto.description;
+
+    await this.projectRepo.save(topic);
+
+    return createResponse('Pending topic updated', topic);
+  }
+
   async deleteTopic(studentId: number, topicId: number) {
     const topic = await this.projectRepo.findOne({
       where: { id: topicId, studentId },
     });
     if (!topic) throw new NotFoundException('Topic not found');
 
-    if (topic.projectStatus !== ProjectStatus.proposal)
-      throw new NotFoundException(
-        'Only topics in PROPOSAL stage can be deleted',
+    if (
+      topic.proposalStatus !== ProposalStatus.pending &&
+      topic.proposalStatus !== ProposalStatus.rejected
+    ) {
+      throw new BadRequestException(
+        'Only topics with PENDING or REJECTED proposal status can be deleted',
       );
+    }
     await this.projectRepo.remove(topic);
     return createResponse('Project topic deleted', {});
   }
 
   // FILE UPLOAD
-  async uploadFile(studentId: number, filePath: string) {
-    const user = await this.userService.findUserById(studentId, 'Student');
-    const project = await this.projectRepo.findOne({
-      where: { studentId, proposalStatus: ProposalStatus.approved },
-    });
-    if (!project) {
-      await fs.promises.unlink(filePath).catch(() => {});
-      throw new NotFoundException('Project not found');
-    }
-
-    const latestFile = await this.fileRepo.findOne({
-      where: { projectId: project.id },
-      order: { version: 'DESC' },
-    });
-    const version = latestFile ? latestFile.version + 1 : 1;
-
-    const filename = `${user.institutionId.slice(
-      -3,
-    )}_${project.projectStatus}_v${version}${path.extname(filePath)}`;
-    const newPath = path.resolve(__dirname, `../../../uploads/${filename}`);
-    await fs.promises.rename(filePath, newPath);
-
-    let response;
+  async uploadFile(uploaderId: number, projectId: number, filePath: string) {
+    let newPath: string | null = null;
     try {
-      try {
-        response = await this.cloudinaryProvider.uploadDocumentToCloud(newPath);
-      } catch (error) {
-        // Clean up the file if upbload fails
-        await fs.promises.unlink(newPath).catch(() => {});
-        throw new BadRequestException('File upload failed');
+      const project = await this.projectRepo.findOne({
+        where: { id: projectId, proposalStatus: ProposalStatus.approved },
+      });
+      if (!project) throw new NotFoundException('Project not found');
+      const uploader = await this.userService.findUserById(uploaderId);
+      const isSupervisor = uploader.role === UserRole.supervisor;
+
+      if (!isSupervisor && uploader.id !== project.studentId) {
+        throw new BadRequestException(
+          'You are not authorized to upload files for this project',
+        );
       }
+      let studentInstitutionId = uploader.institutionId;
+      // Check supervisor assignment
+      if (isSupervisor) {
+        const isAssignedStudent = await this.assignmentRepo.findOne({
+          where: {
+            student: { id: project.studentId },
+            supervisor: { id: uploaderId },
+            isActive: true,
+          },
+          relations: ['student'],
+        });
+        if (!isAssignedStudent) {
+          throw new BadRequestException('You are not assigned to this student');
+        }
+        studentInstitutionId = isAssignedStudent.student.institutionId;
+      }
+      const fileType = isSupervisor ? FileType.correction : FileType.submission;
+
+      // Get latest file version
+      const latestFile = await this.fileRepo.findOne({
+        where: { projectId: project.id, type: fileType },
+        order: { version: 'DESC' },
+      });
+      const version = latestFile ? latestFile.version + 1 : 1;
+
+      // Prepare filename
+      const filename = `${studentInstitutionId.slice(-3)}_${
+        project.projectStatus
+      }_${isSupervisor ? 'corr' : 'sub'}_v${version}${path.extname(filePath)}`;
+      newPath = path.resolve(__dirname, `../../../uploads/${filename}`);
+
+      // Rename (move) uploaded file before upload
+      await fs.promises.rename(filePath, newPath);
+
+      // Upload to Cloudinary
+      const response =
+        await this.cloudinaryProvider.uploadDocumentToCloud(newPath);
+
+      // Save file record
+      const projectFile = this.fileRepo.create({
+        projectId: project.id,
+        version,
+        filePath: response.secure_url,
+        fileSize: response.bytes,
+        projectStage: project.projectStatus,
+        type: fileType,
+      });
+      await this.fileRepo.save(projectFile);
+
+      return createResponse('File uploaded successfully', projectFile);
+    } catch (error) {
+      // Handle all errors (e.g., project not found, upload failed, db error)
+      throw error;
     } finally {
-      // Ensure cleanup even if upload fails
-      await fs.promises.unlink(newPath).catch(() => {});
+      // Always clean up both local temp and renamed file
+      await fs.promises.unlink(filePath).catch(() => {}); // original temp file
+      if (newPath) await fs.promises.unlink(newPath).catch(() => {});
     }
-
-    const projectFile = this.fileRepo.create({
-      projectId: project.id,
-      version,
-      filePath: response.secure_url,
-      fileSize: response.bytes,
-      status: FileStatus.reviewing,
-      projectStage: project.projectStatus,
-    });
-    await this.fileRepo.save(projectFile);
-
-    return createResponse('File uploaded successfully', projectFile);
   }
 
   async previouslyUploadedFile(
     studentId: number,
     projectStage?: ProjectStatus,
+    type?: FileType,
   ) {
     const project = await this.projectRepo.findOne({
       where: { studentId, proposalStatus: ProposalStatus.approved },
     });
-    console.log('Approved project found:', project);
     if (!project) throw new NotFoundException('Project not found');
 
     const where: any = { projectId: project.id };
     if (projectStage) {
       where.projectStage = projectStage;
+    }
+    if (type) {
+      where.type = type;
     }
     const files = await this.fileRepo.find({ where });
 
@@ -144,7 +198,6 @@ export class StudentService {
         .deletePdfsFromCloud([file.filePath])
         .catch(() => {});
     }
-    return
     await this.fileRepo.remove(file);
     return createResponse('File deleted successfully', {});
   }

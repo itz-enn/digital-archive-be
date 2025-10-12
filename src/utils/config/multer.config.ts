@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { diskStorage, FileFilterCallback } from 'multer';
 import * as path from 'path';
 
@@ -13,7 +14,7 @@ const storage = diskStorage({
   },
 });
 
-const allowedTypes = /\.(pdf|docx?|xlsx?|pptx?|jpg|jpeg|png)$/i;
+const allowedTypes = /\.(pdf|docx?|xlsx)$/i;
 
 export const multerConfig = {
   storage,
@@ -25,7 +26,7 @@ export const multerConfig = {
   ) => {
     if (!file.originalname.match(allowedTypes)) {
       cb(null, false);
-      return cb(new Error('Only document and image formats allowed!'));
+      return cb(new BadRequestException('Only pdf and docx formats allowed!'));
     }
     cb(null, true);
   },

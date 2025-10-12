@@ -7,9 +7,9 @@ import {
 } from 'typeorm';
 import { ProjectStatus } from './project.entity';
 
-export enum FileStatus {
-  reviewing = 'reviewing',
-  reviewed = 'reviewed',
+export enum FileType {
+  submission = 'submission',
+  correction = 'correction',
 }
 
 @Entity('project_files')
@@ -31,11 +31,11 @@ export class ProjectFile {
 
   @Column({
     type: 'enum',
-    enum: FileStatus,
-    default: FileStatus.reviewing,
-    nullable: false,
+    enum: FileType,
+    default: FileType.submission,
+    nullable: true,
   })
-  status: FileStatus;
+  type: FileType;
 
   @Column({
     type: 'enum',

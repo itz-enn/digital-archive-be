@@ -27,6 +27,8 @@ import { Assignment } from 'src/entities/assignment.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SendNotificationDto } from './dto/send-notification.dto';
+import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
+import { FileType } from 'src/entities/project-file.entity';
 
 @ApiTags('supervisor')
 @ApiBearerAuth()
@@ -76,6 +78,12 @@ export class SupervisorController {
     required: false,
     description: 'Filter by project stage',
   })
+  @ApiParam({
+    name: 'type',
+    enum: FileType,
+    required: false,
+    description: 'Filter by file type',
+  })
   @ApiResponse({ status: 200, description: 'Uploaded files retrieved' })
   @ApiResponse({ status: 400, description: 'No uploaded files found' })
   @Get('uploaded-files/:id')
@@ -83,6 +91,7 @@ export class SupervisorController {
     @Param('id') id: number,
     @Req() req: Request & { user: UserPayload },
     @Query('projectStage') projectStage?: ProjectStatus,
+    @Query('type') type?: FileType,
   ) {
     const assignment = await this.assignmentRepo.findOne({
       where: {
@@ -93,7 +102,34 @@ export class SupervisorController {
     });
     if (!assignment)
       throw new NotFoundException('You are not assigned to this student');
-    return this.studentService.previouslyUploadedFile(id, projectStage);
+    return this.studentService.previouslyUploadedFile(id, projectStage, type);
+  }
+
+  @ApiOperation({
+    summary:
+      "Update the status of a student project (can't update to previous stage)",
+  })
+  @ApiParam({
+    name: 'id',
+    type: Number,
+    description: 'Project ID',
+  })
+  @ApiResponse({ status: 200, description: 'Project status updated' })
+  @ApiResponse({
+    status: 400,
+    description: 'Cannot move to previous or same stage',
+  })
+  @Put('update-project-status/:id')
+  async updateProjectStatus(
+    @Param('id') id: number,
+    @Body() dto: UpdateProjectStatusDto,
+    @Req() req: Request & { user: UserPayload },
+  ) {
+    return await this.supervisorService.updateProjectStatus(
+      req.user.id,
+      id,
+      dto,
+    );
   }
 
   //TODO: test the endpoint
