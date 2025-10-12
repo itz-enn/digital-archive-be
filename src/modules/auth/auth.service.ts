@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { createResponse } from 'src/utils/global/create-response';
 import { LoginDto } from './dto/login.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -25,7 +29,7 @@ export class AuthService {
       .addSelect('user.password')
       .getOne();
     if (!user || !(await bcrypt.compare(password, user.password)))
-      throw new UnauthorizedException('Invalid ID or password');
+      throw new BadRequestException('Invalid ID or password');
 
     const payload: UserPayload = {
       id: user.id,
