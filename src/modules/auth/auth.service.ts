@@ -7,13 +7,11 @@ import * as bcrypt from 'bcryptjs';
 import { User } from 'src/entities/user.entity';
 import { UserPayload } from 'express';
 import { JwtService } from '@nestjs/jwt';
-import { Department } from 'src/entities/department.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User) private userRepo: Repository<User>,
-    @InjectRepository(Department) private deptRepo: Repository<Department>,
 
     private readonly jwtService: JwtService,
   ) {}
@@ -42,7 +40,4 @@ export class AuthService {
       user: { ...user, department: user.department?.name ?? null },
     });
   }
-
-  //TODO: complete
-  // async forgottenPassword() {}
 }

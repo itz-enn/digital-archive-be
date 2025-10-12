@@ -7,7 +7,6 @@ import envConfig from 'src/utils/config/env.config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
 import { JwtStrategy } from 'src/utils/strategies/jwt.strategy';
-import { Department } from 'src/entities/department.entity';
 
 @Module({
   imports: [
@@ -16,7 +15,7 @@ import { Department } from 'src/entities/department.entity';
       secret: envConfig.jwtSecret,
       signOptions: { expiresIn: '3d' },
     }),
-    TypeOrmModule.forFeature([User, Department]),
+    TypeOrmModule.forFeature([User]),
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],

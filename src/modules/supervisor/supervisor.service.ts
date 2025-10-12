@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Project, ProposalStatus } from 'src/entities/project.entity';
+import {
+  Project,
+  ProjectStatus,
+  ProposalStatus,
+} from 'src/entities/project.entity';
 import { createResponse } from 'src/utils/global/create-response';
 import { UserService } from '../user/user.service';
 import { Assignment } from 'src/entities/assignment.entity';
@@ -11,6 +19,7 @@ import {
   NotificationCategory,
 } from 'src/entities/notification.entity';
 import { SendNotificationDto } from './dto/send-notification.dto';
+import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
 
 @Injectable()
 export class SupervisorService {
@@ -123,6 +132,49 @@ export class SupervisorService {
     return createResponse('Topic reviewed successfully', topic);
   }
 
+  async updateProjectStatus(
+    loggedId: number,
+    projectId: number,
+    dto: UpdateProjectStatusDto,
+  ) {
+    const project = await this.projectRepo.findOne({
+      where: {
+        id: projectId,
+        proposalStatus: ProposalStatus.approved,
+      },
+    });
+    if (!project) throw new NotFoundException('Project not found');
+
+    // Check if the logged-in supervisor is assigned to the student
+    const assignment = await this.assignmentRepo.findOne({
+      where: {
+        student: { id: project.studentId },
+        supervisor: { id: loggedId },
+        isActive: true,
+      },
+    });
+    if (!assignment)
+      throw new NotFoundException('Unauthorized: Not assigned to this student');
+
+    // Prevent moving to a previous stage
+    const statusOrder = [
+      ProjectStatus.proposal,
+      ProjectStatus.chapter1_3,
+      ProjectStatus.chapter4_5,
+      ProjectStatus.completed,
+    ];
+    const currentIdx = statusOrder.indexOf(project.projectStatus);
+    const newIdx = statusOrder.indexOf(dto.newStatus);
+
+    if (newIdx <= currentIdx)
+      throw new BadRequestException('Cannot move to previous or same stage');
+
+    project.projectStatus = dto.newStatus;
+    await this.projectRepo.save(project);
+
+    return createResponse('Project status updated', project);
+  }
+
   async sendNotificationToStudents(senderId: number, dto: SendNotificationDto) {
     const { studentIds, message } = dto;
     const notifications = studentIds.map((studentId) =>
@@ -145,17 +197,14 @@ export class SupervisorService {
 
     //TODO
     // total files submitted
-    //total files in reviewing
-    //total files reviewed
 
-    // total 
+    // total
     // total proposal in pending status
     // total proposal in approved status
     // total projects in rejected status
 
     // number of student in each stage of project status
     // get each users approved topic and get recent Project Status
-
 
     return createResponse('Supervisor analytics retrieved', {
       totalStudents,
