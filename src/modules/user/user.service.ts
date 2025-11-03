@@ -264,11 +264,7 @@ export class UserService {
     return createResponse('User and all associated data deleted', {});
   }
 
-  async getAndMarkNotifications(
-    userId: number,
-    page: number = 1,
-    limit: number = 10,
-  ) {
+  async getNotifications(userId: number, page: number = 1, limit: number = 10) {
     const [notifications, total] = await this.notificationRepo.findAndCount({
       where: { sendTo: userId },
       order: { createdAt: 'DESC' },
@@ -276,13 +272,7 @@ export class UserService {
       take: limit,
     });
 
-    // Mark all as read
-    if (notifications.length > 0) {
-      await this.notificationRepo.update(
-        { sendTo: userId, isRead: false },
-        { isRead: true },
-      );
-    }
+    const unreadCount = notifications.filter((n) => !n.isRead).length;
 
     return createResponse(
       notifications.length < 1
@@ -292,6 +282,7 @@ export class UserService {
         notifications,
         currentPage: page,
         totalNotifications: total,
+        unreadCount,
         totalPages: Math.max(1, Math.ceil(total / limit)),
       },
     );
@@ -314,5 +305,28 @@ export class UserService {
       throw new NotFoundException('No notifications found');
     await this.notificationRepo.remove(notifications);
     return createResponse('All notifications deleted', {});
+  }
+
+  async markAllAsRead(userId: number) {
+    const { affected } = await this.notificationRepo.update(
+      { sendTo: userId, isRead: false },
+      { isRead: true },
+    );
+    return createResponse(`${affected} notifications marked as read`, {});
+  }
+
+  async markOneAsRead(userId: number, notificationId: number) {
+    const notification = await this.notificationRepo.findOne({
+      where: { id: notificationId, sendTo: userId },
+    });
+    if (!notification) {
+      throw new NotFoundException('Notification not found');
+    }
+    if (notification.isRead) {
+      return createResponse('Notification already marked as read', {});
+    }
+    notification.isRead = true;
+    await this.notificationRepo.save(notification);
+    return createResponse('Notification marked as read', {});
   }
 }

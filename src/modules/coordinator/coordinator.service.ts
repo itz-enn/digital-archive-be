@@ -17,6 +17,7 @@ import { Assignment } from 'src/entities/assignment.entity';
 import { StudentLimitDto } from './dto/student-limit.dto';
 import { UserService } from '../user/user.service';
 import { ProjectStatus, ProposalStatus } from 'src/entities/project.entity';
+import { NotificationCategory } from 'src/entities/notification.entity';
 
 @Injectable()
 export class CoordinatorService {
@@ -73,6 +74,7 @@ export class CoordinatorService {
     }
     const assignmentsToSave: Assignment[] = [];
     const assignedStudents: string[] = [];
+    const studentIds: number[] = [];
 
     for (const institutionId of dto.studentInstitutionIds) {
       const student = await this.userRepo.findOne({ where: { institutionId } });
@@ -105,10 +107,29 @@ export class CoordinatorService {
       student.isAssigned = true;
       await this.userRepo.save(student);
       assignedStudents.push(student.institutionId);
+      studentIds.push(student.id);
     }
     // save all new assignments at once
-    if (assignmentsToSave.length > 0)
+    if (assignmentsToSave.length > 0) {
       await this.assignmentRepo.save(assignmentsToSave);
+
+      // Notify supervisor of new student assignments
+      this.userService.createNotification(
+        `You have been assigned ${assignmentsToSave.length} new student${assignmentsToSave.length > 1 ? 's' : ''}.`,
+        supervisor.id,
+        NotificationCategory.student_assignment,
+      );
+
+      // Notify each assigned student
+      for (const studentId of studentIds) {
+        this.userService.createNotification(
+          `You have been assigned to supervisor: ${supervisor.fullName}.`,
+          studentId,
+          NotificationCategory.student_assignment,
+        );
+      }
+    }
+
     return createResponse('Students assigned', assignedStudents);
   }
 
@@ -206,6 +227,7 @@ export class CoordinatorService {
       where: {
         department: { id: coordinator.department.id },
       },
+      select: ['id', 'role', 'status', 'isAssigned'],
     });
     const students = usersInTheDept.filter((u) => u.role === UserRole.student);
     const supervisors = usersInTheDept.filter(
@@ -226,6 +248,7 @@ export class CoordinatorService {
       .getRepository('Project')
       .createQueryBuilder('project')
       .where('project.studentId IN (:...studentIds)', { studentIds })
+      .select(['project.id', 'project.status', 'project.proposalStatus'])
       .getMany();
     const approvedTopics = projects.filter(
       (p) => p.status === ProposalStatus.approved,
@@ -237,15 +260,13 @@ export class CoordinatorService {
       (p) => p.status === ProposalStatus.rejected,
     ).length;
 
-    //TODO: start from here when I'm done
-    const projectStatusCounts = projects.reduce(
+    const studentProjectStatus = projects.reduce(
       (acc, project) => {
         acc[project.status] = (acc[project.status] || 0) + 1;
         return acc;
       },
       {} as Record<string, number>,
     );
-    // total students at different stage of project
 
     return createResponse('Coordinator analytics retrieved', {
       students: students.length,
@@ -257,6 +278,7 @@ export class CoordinatorService {
       approvedTopics,
       pendingTopics,
       rejectedTopics,
+      studentProjectStatus,
     });
   }
 }

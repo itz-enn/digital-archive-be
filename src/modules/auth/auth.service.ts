@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { createResponse } from 'src/utils/global/create-response';
 import { LoginDto } from './dto/login.dto';

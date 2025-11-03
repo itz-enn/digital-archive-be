@@ -112,7 +112,7 @@ export class StudentController {
     return this.studentService.uploadFile(req.user.id, id, file.path);
   }
 
-  @ApiOperation({ summary: 'Get previously uploaded files' })
+  @ApiOperation({ summary: 'Get uploaded files for a student including corections and submission' })
   @ApiResponse({ status: 200, description: 'Uploaded files retrieved' })
   @ApiResponse({ status: 400, description: 'Project not found' })
   @ApiQuery({
