@@ -111,7 +111,7 @@ export class AdminService {
   }
 
   //TODO: test this endpoint
-  async getAdminAnalytics(userId: number) {
+  async getAdminAnalytics() {
     // Fetch departments with their users in a single query
     const departments = await this.deptRepo.find();
 

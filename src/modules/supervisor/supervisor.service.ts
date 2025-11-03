@@ -129,6 +129,14 @@ export class SupervisorService {
       topic.reviewer = reviewer.fullName;
     }
     await this.projectRepo.save(topic);
+
+    this.userService.createNotification(
+      `Your topic "${topic.title}" has been ${status}`,
+      topic.studentId,
+      NotificationCategory.project_review,
+      loggedId,
+    );
+
     return createResponse('Topic reviewed successfully', topic);
   }
 
@@ -172,6 +180,12 @@ export class SupervisorService {
     project.projectStatus = dto.newStatus;
     await this.projectRepo.save(project);
 
+    this.userService.createNotification(
+      `Your project status has been updated to "${dto.newStatus}"`,
+      project.studentId,
+      NotificationCategory.status_update,
+      loggedId,
+    );
     return createResponse('Project status updated', project);
   }
 
@@ -190,24 +204,32 @@ export class SupervisorService {
   }
 
   async getSupervisorAnalytics(supervisorId: number) {
-    // Total assigned students
-    const totalStudents = await this.assignmentRepo.count({
+    const assignedStudents = await this.assignmentRepo.find({
       where: { supervisor: { id: supervisorId }, isActive: true },
+      select: ['student'],
     });
 
-    //TODO
-    // total files submitted
+    const totalProjectsOfAssignedStudents = [];
+    // TODO: continue from here
+    for (const assignment of assignedStudents) {
+      const studentId = assignment.student.id;
+      const projects = await this.projectRepo.find({
+        where: { studentId },
+        select: ['id', 'proposalStatus', 'projectStatus'],
+      });
+    }
 
-    // total
     // total proposal in pending status
     // total proposal in approved status
     // total projects in rejected status
 
     // number of student in each stage of project status
-    // get each users approved topic and get recent Project Status
+
+    //TODO
+    // total files submitted
 
     return createResponse('Supervisor analytics retrieved', {
-      totalStudents,
+      assignedStudents: assignedStudents.length,
       // approvedTopics,
       // pendingTopics,
       // rejectedTopics,

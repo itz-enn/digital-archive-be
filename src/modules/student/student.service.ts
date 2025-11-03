@@ -19,6 +19,7 @@ import * as fs from 'fs';
 import { UserService } from '../user/user.service';
 import { UserRole } from 'src/entities/user.entity';
 import { Assignment } from 'src/entities/assignment.entity';
+import { NotificationCategory } from 'src/entities/notification.entity';
 
 @Injectable()
 export class StudentService {
@@ -42,6 +43,24 @@ export class StudentService {
       }),
     );
     await this.projectRepo.save(projects);
+
+    const assignment = await this.assignmentRepo.findOne({
+      where: {
+        student: { id: studentId },
+        isActive: true,
+      },
+      relations: ['student', 'supervisor'],
+    });
+
+    if (assignment && assignment.supervisor) {
+      this.userService.createNotification(
+        `${assignment.student.fullName} has submitted ${projects.length} new project ${projects.length === 1 ? 'topic' : 'topics'}`,
+        assignment.supervisor.id,
+        NotificationCategory.topic_submission,
+        studentId,
+      );
+    }
+
     return createResponse('Project topics submitted', {});
   }
 
@@ -58,7 +77,6 @@ export class StudentService {
     if (dto.description !== undefined) topic.description = dto.description;
 
     await this.projectRepo.save(topic);
-
     return createResponse('Pending topic updated', topic);
   }
 
@@ -98,6 +116,7 @@ export class StudentService {
       }
       let studentInstitutionId = uploader.institutionId;
       // Check supervisor assignment
+      // let supervisorId: number;
       if (isSupervisor) {
         const isAssignedStudent = await this.assignmentRepo.findOne({
           where: {
@@ -105,12 +124,13 @@ export class StudentService {
             supervisor: { id: uploaderId },
             isActive: true,
           },
-          relations: ['student'],
+          relations: ['student', 'supervisor'],
         });
         if (!isAssignedStudent) {
           throw new BadRequestException('You are not assigned to this student');
         }
         studentInstitutionId = isAssignedStudent.student.institutionId;
+        // supervisorId = isAssignedStudent.supervisor?.id;
       }
       const fileType = isSupervisor ? FileType.correction : FileType.submission;
 
@@ -144,6 +164,14 @@ export class StudentService {
         type: fileType,
       });
       await this.fileRepo.save(projectFile);
+
+      // console.log(supervisorId);
+      // this.userService.createNotification(
+      //   `${isSupervisor ? 'Supervisor has uploaded a new correction' : `${uploader.fullName} has uploaded a new submission`}`,
+      //   isSupervisor ? project.studentId : supervisorId,
+      //   NotificationCategory.file_upload,
+      //   uploaderId,
+      // );
 
       return createResponse('File uploaded successfully', projectFile);
     } catch (error) {

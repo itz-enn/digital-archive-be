@@ -7,6 +7,11 @@ import {
 
 export enum NotificationCategory {
   announcement = 'announcement',
+  project_review = 'project_review',
+  status_update = 'status_update',
+  topic_submission = 'topic_submission',
+  file_upload = 'file_upload',
+  student_assignment = 'student_assignment',
 }
 
 @Entity('notifications')
