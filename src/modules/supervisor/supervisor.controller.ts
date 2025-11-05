@@ -9,6 +9,9 @@ import {
   Query,
   NotFoundException,
   Post,
+  UploadedFile,
+  UnauthorizedException,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +19,8 @@ import {
   ApiParam,
   ApiBearerAuth,
   ApiResponse,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { SupervisorService } from './supervisor.service';
 import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
@@ -29,6 +34,8 @@ import { Repository } from 'typeorm';
 import { SendNotificationDto } from './dto/send-notification.dto';
 import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
 import { FileType } from 'src/entities/project-file.entity';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { multerConfig } from 'src/utils/config/multer.config';
 
 @ApiTags('supervisor')
 @ApiBearerAuth()
@@ -70,7 +77,43 @@ export class SupervisorController {
     return await this.supervisorService.reviewTopics(req.user.id, dto);
   }
 
-  @ApiOperation({ summary: "View a student's uploaded files" })
+  @ApiOperation({ summary: 'Upload a project correction for student' })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', type: Number, description: 'Student ID' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        projectFile: {
+          type: 'string',
+          format: 'binary',
+          description: 'The file to upload (Max size: 5MB)',
+        },
+      },
+      required: ['projectFile'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'File uploaded successfully' })
+  @ApiResponse({ status: 400, description: 'Project not found' })
+  @UseInterceptors(FileInterceptor('projectFile', multerConfig))
+  @Post('upload-file/:id')
+  async uploadCorrectionFile(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request & { user: UserPayload },
+    @Param('id') id: number,
+  ) {
+    if (!file) throw new UnauthorizedException('No file uploaded');
+    return this.supervisorService.uploadCorrectionFile(
+      req.user.id,
+      id,
+      file.path,
+    );
+  }
+
+  @ApiOperation({
+    summary:
+      "View a student's uploaded files including submission and correction",
+  })
   @ApiParam({ name: 'id', type: Number, description: 'Student ID' })
   @ApiParam({
     name: 'projectStage',
@@ -112,7 +155,7 @@ export class SupervisorController {
   @ApiParam({
     name: 'id',
     type: Number,
-    description: 'Project ID',
+    description: 'Student ID',
   })
   @ApiResponse({ status: 200, description: 'Project status updated' })
   @ApiResponse({
@@ -132,7 +175,6 @@ export class SupervisorController {
     );
   }
 
-  //TODO: test the endpoint
   @Post('send-notification')
   @ApiOperation({ summary: 'Send a notification to selected students' })
   @ApiResponse({ status: 200, description: 'Notification sent' })

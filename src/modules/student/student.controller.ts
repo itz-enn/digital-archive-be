@@ -51,12 +51,12 @@ export class StudentController {
   }
 
   @ApiOperation({
-    summary: 'Update a project topic (only pending topics can be updated)',
+    summary: 'Update a project topic',
   })
-  @ApiResponse({ status: 200, description: 'Project topic updated' })
+  @ApiResponse({ status: 200, description: 'Topic updated' })
   @ApiResponse({
     status: 400,
-    description: 'Topic not found or cannot be updated',
+    description: 'Topic not found',
   })
   @ApiParam({ name: 'id', type: Number, description: 'Topic ID' })
   @Put('topic/:id')
@@ -83,9 +83,8 @@ export class StudentController {
     return await this.studentService.deleteTopic(req.user.id, topicId);
   }
 
-  @ApiOperation({ summary: 'Upload a project file' })
+  @ApiOperation({ summary: 'Upload a project file for submission' })
   @ApiConsumes('multipart/form-data')
-  @ApiParam({ name: 'id', type: Number, description: 'Project ID' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -102,14 +101,13 @@ export class StudentController {
   @ApiResponse({ status: 200, description: 'File uploaded successfully' })
   @ApiResponse({ status: 400, description: 'Project not found' })
   @UseInterceptors(FileInterceptor('projectFile', multerConfig))
-  @Post('upload-file/:id')
-  async uploadFile(
+  @Post('upload-file')
+  async uploadSubmissionFile(
     @UploadedFile() file: Express.Multer.File,
     @Req() req: Request & { user: UserPayload },
-    @Param('id') id: number,
   ) {
     if (!file) throw new UnauthorizedException('No file uploaded');
-    return this.studentService.uploadFile(req.user.id, id, file.path);
+    return this.studentService.uploadSubmissionFile(req.user.id, file.path);
   }
 
   @ApiOperation({ summary: 'Get uploaded files for a student including corections and submission' })
