@@ -65,19 +65,33 @@ export class StudentService {
   }
 
   async updateTopic(studentId: number, topicId: number, dto: UpdateTopicDto) {
+    const isAssigned = await this.assignmentRepo.findOne({
+      where: {
+        student: { id: studentId },
+        isActive: true,
+      },
+      relations: ['student', 'supervisor'],
+    });
+    if (!isAssigned) {
+      throw new BadRequestException('Student not assigned to any supervisor');
+    }
     const topic = await this.projectRepo.findOne({
       where: { id: topicId, studentId },
     });
     if (!topic) throw new NotFoundException('Topic not found');
-
-    if (topic.proposalStatus !== ProposalStatus.pending)
-      throw new BadRequestException('Only pending topics can be updated');
-
     if (dto.title !== undefined) topic.title = dto.title;
     if (dto.description !== undefined) topic.description = dto.description;
-
     await this.projectRepo.save(topic);
-    return createResponse('Pending topic updated', topic);
+
+    if (dto.title !== undefined) {
+      this.userService.createNotification(
+        `${isAssigned.student.fullName} has updated the project topic "${topic.title}" to "${dto.title}"`,
+        isAssigned.supervisor.id,
+        NotificationCategory.topic_update,
+        studentId,
+      );
+    }
+    return createResponse('Topic updated', topic);
   }
 
   async deleteTopic(studentId: number, topicId: number) {
@@ -85,7 +99,6 @@ export class StudentService {
       where: { id: topicId, studentId },
     });
     if (!topic) throw new NotFoundException('Topic not found');
-
     if (
       topic.proposalStatus !== ProposalStatus.pending &&
       topic.proposalStatus !== ProposalStatus.rejected
@@ -99,58 +112,38 @@ export class StudentService {
   }
 
   // FILE UPLOAD
-  async uploadFile(uploaderId: number, projectId: number, filePath: string) {
+  async uploadSubmissionFile(studentId: number, filePath: string) {
     let newPath: string | null = null;
     try {
+      const isAssigned = await this.assignmentRepo.findOne({
+        where: {
+          student: { id: studentId },
+          isActive: true,
+        },
+        relations: ['student', 'supervisor'],
+      });
+      if (!isAssigned) {
+        throw new BadRequestException('Student not assigned to any supervisor');
+      }
+      const student = isAssigned.student;
       const project = await this.projectRepo.findOne({
-        where: { id: projectId, proposalStatus: ProposalStatus.approved },
+        where: { studentId, proposalStatus: ProposalStatus.approved },
       });
       if (!project) throw new NotFoundException('Project not found');
-      const uploader = await this.userService.findUserById(uploaderId);
-      const isSupervisor = uploader.role === UserRole.supervisor;
-
-      if (!isSupervisor && uploader.id !== project.studentId) {
-        throw new BadRequestException(
-          'You are not authorized to upload files for this project',
-        );
-      }
-      let studentInstitutionId = uploader.institutionId;
-      // Check supervisor assignment
-      // let supervisorId: number;
-      if (isSupervisor) {
-        const isAssignedStudent = await this.assignmentRepo.findOne({
-          where: {
-            student: { id: project.studentId },
-            supervisor: { id: uploaderId },
-            isActive: true,
-          },
-          relations: ['student', 'supervisor'],
-        });
-        if (!isAssignedStudent) {
-          throw new BadRequestException('You are not assigned to this student');
-        }
-        studentInstitutionId = isAssignedStudent.student.institutionId;
-        // supervisorId = isAssignedStudent.supervisor?.id;
-      }
-      const fileType = isSupervisor ? FileType.correction : FileType.submission;
 
       // Get latest file version
       const latestFile = await this.fileRepo.findOne({
-        where: { projectId: project.id, type: fileType },
+        where: { projectId: project.id, type: FileType.submission },
         order: { version: 'DESC' },
       });
       const version = latestFile ? latestFile.version + 1 : 1;
 
       // Prepare filename
-      const filename = `${studentInstitutionId.slice(-3)}_${
+      const filename = `${student.institutionId.slice(-3)}_${
         project.projectStatus
-      }_${isSupervisor ? 'corr' : 'sub'}_v${version}${path.extname(filePath)}`;
+      }_sub_v${version}${path.extname(filePath)}`;
       newPath = path.resolve(__dirname, `../../../uploads/${filename}`);
-
-      // Rename (move) uploaded file before upload
       await fs.promises.rename(filePath, newPath);
-
-      // Upload to Cloudinary
       const response =
         await this.cloudinaryProvider.uploadDocumentToCloud(newPath);
 
@@ -161,24 +154,21 @@ export class StudentService {
         filePath: response.secure_url,
         fileSize: response.bytes,
         projectStage: project.projectStatus,
-        type: fileType,
+        type: FileType.submission,
       });
       await this.fileRepo.save(projectFile);
 
-      // console.log(supervisorId);
-      // this.userService.createNotification(
-      //   `${isSupervisor ? 'Supervisor has uploaded a new correction' : `${uploader.fullName} has uploaded a new submission`}`,
-      //   isSupervisor ? project.studentId : supervisorId,
-      //   NotificationCategory.file_upload,
-      //   uploaderId,
-      // );
+      this.userService.createNotification(
+        `${student.fullName} has uploaded a new submission`,
+        isAssigned.supervisor.id,
+        NotificationCategory.file_upload,
+        studentId,
+      );
 
       return createResponse('File uploaded successfully', projectFile);
     } catch (error) {
-      // Handle all errors (e.g., project not found, upload failed, db error)
       throw error;
     } finally {
-      // Always clean up both local temp and renamed file
       await fs.promises.unlink(filePath).catch(() => {}); // original temp file
       if (newPath) await fs.promises.unlink(newPath).catch(() => {});
     }

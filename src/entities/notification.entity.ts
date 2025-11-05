@@ -12,6 +12,7 @@ export enum NotificationCategory {
   topic_submission = 'topic_submission',
   file_upload = 'file_upload',
   student_assignment = 'student_assignment',
+  topic_update = 'topic_update',
 }
 
 @Entity('notifications')

@@ -20,6 +20,10 @@ import {
 } from 'src/entities/notification.entity';
 import { SendNotificationDto } from './dto/send-notification.dto';
 import { UpdateProjectStatusDto } from './dto/update-project-status.dto';
+import { FileType, ProjectFile } from 'src/entities/project-file.entity';
+import * as path from 'path';
+import * as fs from 'fs';
+import { CloudinaryProvider } from 'src/utils/provider/cloudinary.provider';
 
 @Injectable()
 export class SupervisorService {
@@ -29,8 +33,10 @@ export class SupervisorService {
     private assignmentRepo: Repository<Assignment>,
     @InjectRepository(Notification)
     private notificationRepo: Repository<Notification>,
+    @InjectRepository(ProjectFile) private fileRepo: Repository<ProjectFile>,
 
     private readonly userService: UserService,
+    private readonly cloudinaryProvider: CloudinaryProvider,
   ) {}
 
   async assignedStudentsBySupervisor(supervisorId: number) {
@@ -140,29 +146,98 @@ export class SupervisorService {
     return createResponse('Topic reviewed successfully', topic);
   }
 
+  async uploadCorrectionFile(
+    supervisorId: number,
+    studentId: number,
+    filePath: string,
+  ) {
+    let newPath: string | null = null;
+    try {
+      const isAssigned = await this.assignmentRepo.findOne({
+        where: {
+          student: { id: studentId },
+          supervisor: { id: supervisorId },
+          isActive: true,
+        },
+        relations: ['student'],
+      });
+      if (!isAssigned) {
+        throw new BadRequestException('You are not assigned to this student');
+      }
+
+      const project = await this.projectRepo.findOne({
+        where: { studentId, proposalStatus: ProposalStatus.approved },
+      });
+      if (!project) throw new NotFoundException('Project not found');
+
+      // Get latest file version
+      const latestFile = await this.fileRepo.findOne({
+        where: { projectId: project.id, type: FileType.correction },
+        order: { version: 'DESC' },
+      });
+      const version = latestFile ? latestFile.version + 1 : 1;
+
+      // Rename (move) uploaded file before upload
+      const filename = `${isAssigned.student.institutionId.slice(-3)}_${
+        project.projectStatus
+      }_corr_v${version}${path.extname(filePath)}`;
+      newPath = path.resolve(__dirname, `../../../uploads/${filename}`);
+      await fs.promises.rename(filePath, newPath);
+
+      // Upload to Cloudinary
+      const response =
+        await this.cloudinaryProvider.uploadDocumentToCloud(newPath);
+
+      // Save file record
+      const projectFile = this.fileRepo.create({
+        projectId: project.id,
+        version,
+        filePath: response.secure_url,
+        fileSize: response.bytes,
+        projectStage: project.projectStatus,
+        type: FileType.correction,
+      });
+      await this.fileRepo.save(projectFile);
+
+      this.userService.createNotification(
+        'Supervisor has uploaded a new correction',
+        studentId,
+        NotificationCategory.file_upload,
+        supervisorId,
+      );
+
+      return createResponse('File uploaded successfully', projectFile);
+    } catch (error) {
+      throw error;
+    } finally {
+      await fs.promises.unlink(filePath).catch(() => {});
+      if (newPath) await fs.promises.unlink(newPath).catch(() => {});
+    }
+  }
+
   async updateProjectStatus(
-    loggedId: number,
-    projectId: number,
+    supervisorId: number,
+    studentId: number,
     dto: UpdateProjectStatusDto,
   ) {
-    const project = await this.projectRepo.findOne({
-      where: {
-        id: projectId,
-        proposalStatus: ProposalStatus.approved,
-      },
-    });
-    if (!project) throw new NotFoundException('Project not found');
-
     // Check if the logged-in supervisor is assigned to the student
     const assignment = await this.assignmentRepo.findOne({
       where: {
-        student: { id: project.studentId },
-        supervisor: { id: loggedId },
+        student: { id: studentId },
+        supervisor: { id: supervisorId },
         isActive: true,
       },
     });
     if (!assignment)
       throw new NotFoundException('Unauthorized: Not assigned to this student');
+
+    const project = await this.projectRepo.findOne({
+      where: {
+        studentId,
+        proposalStatus: ProposalStatus.approved,
+      },
+    });
+    if (!project) throw new NotFoundException('Project not found');
 
     // Prevent moving to a previous stage
     const statusOrder = [
@@ -184,7 +259,7 @@ export class SupervisorService {
       `Your project status has been updated to "${dto.newStatus}"`,
       project.studentId,
       NotificationCategory.status_update,
-      loggedId,
+      supervisorId,
     );
     return createResponse('Project status updated', project);
   }
