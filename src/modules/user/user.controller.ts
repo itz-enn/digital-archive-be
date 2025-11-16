@@ -162,7 +162,7 @@ export class UserController {
     @Param('id') id: number,
     @Req() req: Request & { user: UserPayload },
   ) {
-    return await this.userService.deleteUserAndAssociations(req.user.id, id);
+    return await this.userService.deleteUser(req.user.id, id);
   }
 
   @Get('notifications')
@@ -231,5 +231,14 @@ export class UserController {
     @Param('id') id: number,
   ) {
     return await this.userService.markOneAsRead(req.user.id, id);
+  }
+
+  @Get('analytics')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get analytics for user' })
+  @ApiResponse({ status: 200, description: 'Analytics retrieved' })
+  async getUserAnalytics(@Req() req: Request & { user: UserPayload }) {
+    return await this.userService.getUserAnalytics(req.user.id);
   }
 }

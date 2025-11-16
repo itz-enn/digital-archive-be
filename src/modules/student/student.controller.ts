@@ -149,11 +149,4 @@ export class StudentController {
   ) {
     return this.studentService.deleteFile(req.user.id, id);
   }
-
-  // @ApiOperation({ summary: 'Get analytics for student dashboard' })
-  // @ApiResponse({ status: 200, description: 'Student analytics retrieved' })
-  // @Get('analytics')
-  // async getStudentAnalytics(@Req() req: Request & { user: UserPayload }) {
-  //   return await this.studentService.getStudentAnalytics(req.user.id);
-  // }
 }

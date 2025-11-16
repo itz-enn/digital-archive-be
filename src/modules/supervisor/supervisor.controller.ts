@@ -65,7 +65,7 @@ export class SupervisorController {
 
   @ApiOperation({
     summary:
-      'Review a student topic proposal only by assigned supervisor, (if a current approved topic exists and APPROVED is passed, the approved topic is changed to REJECTED)',
+      'Review a student topic proposal only by assigned supervisor, (if a current approved topic exists and approved is passed, the approved topic is changed to rejected)',
   })
   @ApiResponse({ status: 200, description: 'Topic reviewed successfully' })
   @ApiResponse({ status: 400, description: 'Topic not found' })
@@ -187,11 +187,4 @@ export class SupervisorController {
       dto,
     );
   }
-
-  // @ApiOperation({ summary: 'Get analytics for supervisor dashboard' })
-  // @ApiResponse({ status: 200, description: 'Supervisor analytics retrieved' })
-  // @Get('analytics')
-  // async getSupervisorAnalytics(@Req() req: Request & { user: UserPayload }) {
-  //   return await this.supervisorService.getSupervisorAnalytics(req.user.id);
-  // }
 }

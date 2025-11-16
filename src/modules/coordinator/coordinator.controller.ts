@@ -152,13 +152,4 @@ export class CoordinatorController {
   async deleteArchive(@Param('id') id: string) {
     return await this.coordinatorService.deleteArchive(Number(id));
   }
-
-  // @Get('coordinator-analytics')
-  // @UseGuards(JwtAuthGuard)
-  // @ApiBearerAuth()
-  // @ApiOperation({ summary: 'Get analytics for coordinator dashboard' })
-  // @ApiResponse({ status: 200, description: 'Coordinator analytics retrieved' })
-  // async getCoordinatorAnalytics(@Req() req: Request & { user: UserPayload }) {
-  //   return await this.coordinatorService.getCoordinatorAnalytics(req.user.id);
-  // }
 }

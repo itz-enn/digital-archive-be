@@ -109,47 +109,4 @@ export class AdminService {
       departments,
     );
   }
-
-  //TODO: test this endpoint
-  async getAdminAnalytics() {
-    // Fetch departments with their users in a single query
-    const departments = await this.deptRepo.find();
-
-    // Fetch all coordinators and supervisors in one query
-    const users = await this.userRepo.find({
-      where: [
-        { role: UserRole.coordinator },
-        { role: UserRole.supervisor },
-        { role: UserRole.student },
-      ],
-      relations: ['department'],
-    });
-
-    const totalCoordinators = users.filter(
-      (u) => u.role === UserRole.coordinator,
-    ).length;
-
-    // Example: department-wise stats (optional)
-    const departmentStats = departments.map((dept) => {
-      const stats = users.reduce(
-        (acc, user) => {
-          const deptName = user.department?.name || 'Unknown';
-          if (deptName === dept.name) {
-            if (user.role === UserRole.supervisor) acc.supervisors++;
-            if (user.role === UserRole.student) acc.students++;
-          }
-          return acc;
-        },
-        { name: dept.name, students: 0, supervisors: 0 },
-      );
-
-      return stats;
-    });
-
-    return createResponse('Admin analytics retrieved', {
-      totalDepartments: departments.length,
-      totalCoordinators,
-      departmentStats,
-    });
-  }
 }
