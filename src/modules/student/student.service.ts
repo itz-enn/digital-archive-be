@@ -219,40 +219,4 @@ export class StudentService {
     await this.fileRepo.remove(file);
     return createResponse('File deleted successfully', {});
   }
-
-  async getStudentAnalytics(studentId: number) {
-    // Get all topics for the student in one query
-    const projects = await this.projectRepo.find({ where: { studentId } });
-
-    // Calculate counts in-memory
-    const totalTopicsSubmitted = projects.length;
-    const approvedTopics = projects.filter(
-      (t) => t.proposalStatus === ProposalStatus.approved,
-    ).length;
-    const pendingTopics = projects.filter(
-      (t) => t.proposalStatus === ProposalStatus.pending,
-    ).length;
-    const rejectedTopics = projects.filter(
-      (t) => t.proposalStatus === ProposalStatus.rejected,
-    ).length;
-
-    // Total files uploaded
-    let totalFiles = 0;
-    const approvedProject = projects.find(
-      (t) => t.proposalStatus === ProposalStatus.approved,
-    );
-    if (approvedProject) {
-      totalFiles = await this.fileRepo.count({
-        where: { projectId: approvedProject.id },
-      });
-    }
-
-    return createResponse('Student analytics retrieved', {
-      totalTopicsSubmitted,
-      approvedTopics,
-      pendingTopics,
-      rejectedTopics,
-      totalFiles,
-    });
-  }
 }

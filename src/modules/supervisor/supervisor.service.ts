@@ -72,9 +72,11 @@ export class SupervisorService {
 
     const students = assignedStudents.map((student) => {
       const projects = student.projects || [];
-      const approved = projects.find((p) => p.proposalStatus === 'APPROVED');
+      const approved = projects.find(
+        (p) => p.proposalStatus === ProposalStatus.approved,
+      );
       const rejected = projects
-        .filter((p) => p.proposalStatus === 'REJECTED')
+        .filter((p) => p.proposalStatus === ProposalStatus.rejected)
         .map((p) => p.projectTitle);
 
       return {
@@ -253,6 +255,9 @@ export class SupervisorService {
       throw new BadRequestException('Cannot move to previous or same stage');
 
     project.projectStatus = dto.newStatus;
+    if (dto.newStatus === ProjectStatus.completed) {
+      project.completedAt = new Date();
+    }
     await this.projectRepo.save(project);
 
     this.userService.createNotification(
@@ -276,38 +281,5 @@ export class SupervisorService {
     );
     await this.notificationRepo.save(notifications);
     return createResponse('Notification sent', {});
-  }
-
-  async getSupervisorAnalytics(supervisorId: number) {
-    const assignedStudents = await this.assignmentRepo.find({
-      where: { supervisor: { id: supervisorId }, isActive: true },
-      select: ['student'],
-    });
-
-    const totalProjectsOfAssignedStudents = [];
-    // TODO: continue from here
-    for (const assignment of assignedStudents) {
-      const studentId = assignment.student.id;
-      const projects = await this.projectRepo.find({
-        where: { studentId },
-        select: ['id', 'proposalStatus', 'projectStatus'],
-      });
-    }
-
-    // total proposal in pending status
-    // total proposal in approved status
-    // total projects in rejected status
-
-    // number of student in each stage of project status
-
-    //TODO
-    // total files submitted
-
-    return createResponse('Supervisor analytics retrieved', {
-      assignedStudents: assignedStudents.length,
-      // approvedTopics,
-      // pendingTopics,
-      // rejectedTopics,
-    });
   }
 }

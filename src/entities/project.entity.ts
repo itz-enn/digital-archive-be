@@ -55,6 +55,9 @@ export class Project {
   })
   projectStatus: ProjectStatus;
 
+  @Column({ nullable: true })
+  completedAt: Date;
+
   @CreateDateColumn({ nullable: false })
   submittedAt: Date;
 
