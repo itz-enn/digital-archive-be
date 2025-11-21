@@ -32,6 +32,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { multerConfig } from 'src/utils/config/multer.config';
 import { ProjectStatus } from 'src/entities/project.entity';
 import { FileType } from 'src/entities/project-file.entity';
+import { UpdateAbstractIntroDto } from './dto/update-abstract-intro.dto';
 
 @ApiTags('student')
 @ApiBearerAuth()
@@ -110,7 +111,10 @@ export class StudentController {
     return this.studentService.uploadSubmissionFile(req.user.id, file.path);
   }
 
-  @ApiOperation({ summary: 'Get uploaded files for a student including corections and submission' })
+  @ApiOperation({
+    summary:
+      'Get uploaded files for a student including corections and submission',
+  })
   @ApiResponse({ status: 200, description: 'Uploaded files retrieved' })
   @ApiResponse({ status: 400, description: 'Project not found' })
   @ApiQuery({
@@ -134,7 +138,7 @@ export class StudentController {
     return this.studentService.previouslyUploadedFile(
       req.user.id,
       projectStage,
-      type
+      type,
     );
   }
 
@@ -148,5 +152,29 @@ export class StudentController {
     @Param('id') id: number,
   ) {
     return this.studentService.deleteFile(req.user.id, id);
+  }
+
+  @ApiOperation({
+    summary:
+      'Update project abstract and introduction only when students are at chapter4_5 stage)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Abstract and Introduction updated',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Project not in CHAPTER4_5 stage or approved project not found',
+  })
+  @Put('abstract-intro')
+  async updateProjectSections(
+    @Body() dto: UpdateAbstractIntroDto,
+    @Req() req: Request & { user: UserPayload },
+  ) {
+    return this.studentService.updateAbstractAndIntro(
+      req.user.id,
+      dto,
+    );
   }
 }

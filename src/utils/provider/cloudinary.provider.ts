@@ -32,7 +32,7 @@ export class CloudinaryProvider {
         unique_filename: false,
         overwrite: true,
         invalidate: true,
-        format: null
+        format: null,
       };
       return await cloudinary.uploader.upload(filePath, options);
     } catch (error) {
@@ -44,37 +44,19 @@ export class CloudinaryProvider {
   async deletePdfsFromCloud(filePaths: string[]) {
     try {
       const publicIds = this.getPublicIds(filePaths);
-      const options: UploadApiOptions = {
-        invalidate: true,
-        resource_type: 'raw',
-      };
-    
-      return await cloudinary.api.delete_resources(publicIds, options);
-    } catch (error) {
-      console.error('Error deleting Pdfs:', error);
-      throw new Error('Failed to delete Pdfs');
-    }
-  }
-
-  async deleteDocumentsFromCloud(filePaths: string[]) {
-    try {
-      const publicIds = this.getPublicIds(filePaths);
       if (publicIds.length === 0) {
         console.warn('No valid Cloudinary public IDs found for deletion.');
         return;
       }
-
       const options: UploadApiOptions = {
         invalidate: true,
         resource_type: 'raw',
       };
 
-      const result = await cloudinary.api.delete_resources(publicIds, options);
-      console.log('Deleted from Cloudinary:', result.deleted);
-      return result;
+      return await cloudinary.api.delete_resources(publicIds, options);
     } catch (error) {
-      console.error(' Error deleting documents:', error);
-      throw new Error('Failed to delete documents from Cloudinary');
+      console.error('Error deleting Pdfs:', error);
+      throw new Error('Failed to delete Pdfs');
     }
   }
 }

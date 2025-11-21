@@ -36,10 +36,10 @@ export class Archive {
   @Column({ nullable: false })
   year: number;
 
-  @Column('text', { nullable: true })
+  @Column('text', { nullable: false })
   abstract: string;
 
-  @Column('text', { nullable: true })
+  @Column('text', { nullable: false })
   introduction: string;
 
   @Column({ nullable: false })

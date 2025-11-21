@@ -6,8 +6,10 @@ import {
   IsNotEmpty,
   IsArray,
   ArrayMaxSize,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { ProjectCategory } from 'src/entities/archive.entity';
 
 class TopicDto {
   @ApiProperty({ description: 'Title of the project' })
@@ -19,6 +21,14 @@ class TopicDto {
   @IsNotEmpty()
   @IsString()
   description: string;
+
+  @ApiProperty({
+    description: 'Category of the project',
+    enum: ProjectCategory,
+  })
+  @IsNotEmpty()
+  @IsEnum(ProjectCategory)
+  category: ProjectCategory;
 }
 
 export class SubmitTopicsDto {

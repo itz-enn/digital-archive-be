@@ -172,6 +172,12 @@ export class SupervisorService {
       });
       if (!project) throw new NotFoundException('Project not found');
 
+      if (project.projectStatus === ProjectStatus.completed) {
+        throw new BadRequestException(
+          'Cannot upload files for a completed project',
+        );
+      }
+
       // Get latest file version
       const latestFile = await this.fileRepo.findOne({
         where: { projectId: project.id, type: FileType.correction },
@@ -256,6 +262,9 @@ export class SupervisorService {
 
     project.projectStatus = dto.newStatus;
     if (dto.newStatus === ProjectStatus.completed) {
+      if (!project.abstract && !project.introduction) {
+        throw new BadRequestException('Abstract and Introduction is empty');
+      }
       project.completedAt = new Date();
     }
     await this.projectRepo.save(project);
