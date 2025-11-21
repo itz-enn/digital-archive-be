@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { ProjectCategory } from './archive.entity';
 
 export enum ProposalStatus {
   pending = 'pending',
@@ -54,6 +55,13 @@ export class Project {
     nullable: false,
   })
   projectStatus: ProjectStatus;
+
+  // @Column({
+  //   type: 'enum',
+  //   enum: ProjectCategory,
+  //   nullable: false,
+  // })
+  // category: ProjectCategory;
 
   @Column({ nullable: true })
   completedAt: Date;

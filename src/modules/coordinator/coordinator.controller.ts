@@ -9,6 +9,9 @@ import {
   Req,
   Query,
   Get,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -19,6 +22,7 @@ import {
   ApiQuery,
   ApiBody,
   PartialType,
+  ApiConsumes,
 } from '@nestjs/swagger';
 import { CoordinatorService } from './coordinator.service';
 import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
@@ -29,6 +33,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UserPayload } from 'express';
 import { AssignStudentsDto } from './dto/assign-students.dto';
 import { StudentLimitDto } from './dto/student-limit.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import * as xlsx from 'xlsx';
 
 @ApiTags('coordinator')
 @ApiBearerAuth()
@@ -151,5 +157,79 @@ export class CoordinatorController {
   @ApiParam({ name: 'id', type: Number, description: 'Archive ID' })
   async deleteArchive(@Param('id') id: string) {
     return await this.coordinatorService.deleteArchive(Number(id));
+  }
+
+  @Post('bulk-create-user')
+  @ApiOperation({
+    summary:
+      'Create user accounts in bulk from Excel file. Fields in the file should be fullName and institutionId',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'Excel (.xlsx/.xls) file with columns fullName and institutionId',
+        },
+        role: {
+          type: 'string',
+          enum: Object.values(UserRole),
+          description: 'Role for the created users (student or supervisor)',
+        },
+      },
+      required: ['file', 'role'],
+    },
+  })
+  @ApiResponse({ status: 200, description: 'Users created (summary returned)' })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      fileFilter: (req, file, callback) => {
+        if (!file.originalname.match(/\.(xls|xlsx)$/)) {
+          return callback(
+            new BadRequestException('Only Excel files are allowed!'),
+            false,
+          );
+        }
+        callback(null, true);
+      },
+    }),
+  )
+  async bulkCreateAccount(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: Request & { user: UserPayload },
+    @Body('role') role: UserRole,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+    const workbook = xlsx.read(file.buffer, { type: 'buffer' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows: any[] = xlsx.utils.sheet_to_json(sheet);
+    if (rows.length === 0) {
+      throw new BadRequestException('Excel file is empty.');
+    }
+    const requiredColumns = ['fullName', 'institutionId'];
+    const headers = Object.keys(rows[0]);
+    const missing = requiredColumns.filter((col) => !headers.includes(col));
+    if (missing.length > 0) {
+      throw new BadRequestException(
+        `Missing required columns: ${missing.join(', ')}`,
+      );
+    }
+    console.log(rows);
+    const dtos: CreateUserDto[] = rows.map((row) => ({
+      fullName: row.fullName,
+      institutionId: row.institutionId,
+      role,
+    }));
+
+    return this.coordinatorService.bulkCreateAccount(
+      req.user.id,
+      dtos,
+    );
   }
 }

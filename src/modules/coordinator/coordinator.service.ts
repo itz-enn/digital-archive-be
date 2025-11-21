@@ -16,7 +16,6 @@ import { AssignStudentsDto } from './dto/assign-students.dto';
 import { Assignment } from 'src/entities/assignment.entity';
 import { StudentLimitDto } from './dto/student-limit.dto';
 import { UserService } from '../user/user.service';
-import { ProjectStatus, ProposalStatus } from 'src/entities/project.entity';
 import { NotificationCategory } from 'src/entities/notification.entity';
 
 @Injectable()
@@ -30,8 +29,7 @@ export class CoordinatorService {
     private readonly userService: UserService,
   ) {}
 
-  // DASHBOARD
-  async createUserAccount(id: number, dto: CreateUserDto) {
+  private async saveUser(id: number, dto: CreateUserDto) {
     const existingUser = await this.userRepo.findOne({
       where: { institutionId: dto.institutionId },
     });
@@ -45,13 +43,19 @@ export class CoordinatorService {
       department,
     });
     await this.userRepo.save(user);
-
     delete user.password;
 
-    return createResponse('User created successfully', {
-      ...user,
-      department: department?.name ?? null,
-    });
+    this.userService.createNotification(
+      `Welcome!!, Update your profile information to get started`,
+      user.id,
+      NotificationCategory.announcement,
+    );
+    return { ...user, department: department?.name ?? null };
+  }
+  // DASHBOARD
+  async createUserAccount(id: number, dto: CreateUserDto) {
+    const user = await this.saveUser(id, dto);
+    return createResponse('User created successfully', user);
   }
 
   // ASSIGNING SUPERVISORS
@@ -218,5 +222,26 @@ export class CoordinatorService {
     const result = await this.archiveRepo.delete(id);
     if (result.affected === 0) throw new NotFoundException('Archive not found');
     return createResponse('Archive deleted', {});
+  }
+
+  async bulkCreateAccount(userId: number, dtos: CreateUserDto[]) {
+    if (!dtos || dtos.length === 0) {
+      throw new BadRequestException('No user data provided');
+    }
+
+    const failedUploads: string[] = [];
+    let successfulUploads = 0;
+    for (const dto of dtos) {
+      try {
+        await this.saveUser(userId, dto);
+        successfulUploads++;
+      } catch (error) {
+        failedUploads.push(dto.institutionId);
+      }
+    }
+    return createResponse(
+      `${successfulUploads} users created out of ${dtos.length}`,
+      { failedUploads },
+    );
   }
 }

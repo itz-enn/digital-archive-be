@@ -7,6 +7,7 @@ import { SupervisorModule } from './modules/supervisor/supervisor.module';
 import { StudentModule } from './modules/student/student.module';
 import { UserModule } from './modules/user/user.module';
 import { CoordinatorModule } from './modules/coordinator/coordinator.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { CoordinatorModule } from './modules/coordinator/coordinator.module';
         connectionLimit: 10,
       },
     }),
+    ScheduleModule.forRoot(),
     AuthModule,
     AdminModule,
     CoordinatorModule,
