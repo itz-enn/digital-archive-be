@@ -24,7 +24,8 @@ export class UserCron {
     private readonly cloudinaryProvider: CloudinaryProvider,
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  // TODO: undo comment
+  // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async deleteUser30daysAfterProjectCompleted() {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const completedProjects = await this.projectRepo.find({
@@ -56,8 +57,11 @@ export class UserCron {
     for (const project of completedProjects) {
       try {
         const lastFile = await this.fileRepo.findOne({
-          where: { projectId: project.id, type: FileType.submission },
-          order: { uploadedAt: 'DESC' },
+          where: {
+            projectId: project.id,
+            type: FileType.submission,
+            isFinal: true,
+          },
           select: ['filePath'],
         });
 
@@ -132,7 +136,7 @@ export class UserCron {
         if (files && files.length > 0) {
           let urlsToDelete: string[] = [];
           for (const file of files) {
-            if (file.filePath) {
+            if (file.filePath && !file.isFinal) {
               urlsToDelete.push(file.filePath);
             }
           }

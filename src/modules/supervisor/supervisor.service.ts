@@ -262,10 +262,19 @@ export class SupervisorService {
 
     project.projectStatus = dto.newStatus;
     if (dto.newStatus === ProjectStatus.completed) {
+      const lastFile = await this.fileRepo.findOne({
+        where: { projectId: project.id, type: FileType.submission },
+        order: { uploadedAt: 'DESC' },
+      });
+      if (!lastFile) {
+        throw new BadRequestException('No submission file found');
+      }
       if (!project.abstract && !project.introduction) {
         throw new BadRequestException('Abstract and Introduction is empty');
       }
+      lastFile.isFinal = true;
       project.completedAt = new Date();
+      await this.fileRepo.save(lastFile);
     }
     await this.projectRepo.save(project);
 

@@ -1,13 +1,13 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
 export class UpdateAbstractIntroDto {
-  @ApiPropertyOptional({ description: 'Project abstract' })
+  @ApiProperty({ description: 'Project abstract' })
   @IsNotEmpty()
   @IsString()
   abstract: string;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Project introduction - background to the study',
   })
   @IsNotEmpty()

@@ -173,11 +173,11 @@ export class CoordinatorController {
           type: 'string',
           format: 'binary',
           description:
-            'Excel (.xlsx/.xls) file with columns fullName and institutionId',
+            'Excel file with columns fullName and institutionId',
         },
         role: {
           type: 'string',
-          enum: Object.values(UserRole),
+          enum: [UserRole.student, UserRole.supervisor],
           description: 'Role for the created users (student or supervisor)',
         },
       },
@@ -206,6 +206,9 @@ export class CoordinatorController {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
+    if (![UserRole.student, UserRole.supervisor].includes(role)) {
+      throw new BadRequestException('Role must be either student or supervisor');
+    }
     const workbook = xlsx.read(file.buffer, { type: 'buffer' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     const rows: any[] = xlsx.utils.sheet_to_json(sheet);
@@ -220,7 +223,6 @@ export class CoordinatorController {
         `Missing required columns: ${missing.join(', ')}`,
       );
     }
-    console.log(rows);
     const dtos: CreateUserDto[] = rows.map((row) => ({
       fullName: row.fullName,
       institutionId: row.institutionId,
