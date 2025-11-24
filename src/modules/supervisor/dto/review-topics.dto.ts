@@ -24,7 +24,7 @@ export class ReviewTopicsDto {
   @IsNotEmpty()
   status: ProposalStatus;
 
-  @ApiPropertyOptional({ description: 'Review project', required: false })
+  @ApiPropertyOptional({ description: 'Review project' })
   @IsOptional()
   @IsString()
   review?: string;

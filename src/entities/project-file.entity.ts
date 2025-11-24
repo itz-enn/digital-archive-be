@@ -44,6 +44,9 @@ export class ProjectFile {
   })
   projectStage: ProjectStatus;
 
+  @Column({ nullable: false, default: false })
+  isFinal: boolean;
+
   @CreateDateColumn({ nullable: false })
   uploadedAt: Date;
 

@@ -17,9 +17,9 @@ import { CloudinaryProvider } from 'src/utils/provider/cloudinary.provider';
 import * as path from 'path';
 import * as fs from 'fs';
 import { UserService } from '../user/user.service';
-import { UserRole } from 'src/entities/user.entity';
 import { Assignment } from 'src/entities/assignment.entity';
 import { NotificationCategory } from 'src/entities/notification.entity';
+import { UpdateAbstractIntroDto } from './dto/update-abstract-intro.dto';
 
 @Injectable()
 export class StudentService {
@@ -33,13 +33,13 @@ export class StudentService {
     private readonly userService: UserService,
   ) {}
 
-  // TOPIC SUBMISSION
   async submitNewTopics(studentId: number, dto: SubmitTopicsDto) {
     const projects = dto.topics.map((topic) =>
       this.projectRepo.create({
         studentId,
         title: topic.title,
         description: topic.description,
+        category: topic.category,
       }),
     );
     await this.projectRepo.save(projects);
@@ -81,6 +81,7 @@ export class StudentService {
     if (!topic) throw new NotFoundException('Topic not found');
     if (dto.title !== undefined) topic.title = dto.title;
     if (dto.description !== undefined) topic.description = dto.description;
+    if (dto.category !== undefined) topic.category = dto.category;
     await this.projectRepo.save(topic);
 
     if (dto.title !== undefined) {
@@ -111,7 +112,6 @@ export class StudentService {
     return createResponse('Project topic deleted', {});
   }
 
-  // FILE UPLOAD
   async uploadSubmissionFile(studentId: number, filePath: string) {
     let newPath: string | null = null;
     try {
@@ -130,6 +130,12 @@ export class StudentService {
         where: { studentId, proposalStatus: ProposalStatus.approved },
       });
       if (!project) throw new NotFoundException('Project not found');
+
+      if (project.projectStatus === ProjectStatus.completed) {
+        throw new BadRequestException(
+          'Cannot upload files for a completed project',
+        );
+      }
 
       // Get latest file version
       const latestFile = await this.fileRepo.findOne({
@@ -218,5 +224,23 @@ export class StudentService {
     }
     await this.fileRepo.remove(file);
     return createResponse('File deleted successfully', {});
+  }
+
+  async updateAbstractAndIntro(studentId: number, dto: UpdateAbstractIntroDto) {
+    const project = await this.projectRepo.findOne({
+      where: { studentId, proposalStatus: ProposalStatus.approved },
+    });
+    if (!project) {
+      throw new NotFoundException('Approved project not found');
+    }
+    if (project.projectStatus !== ProjectStatus.chapter4_5) {
+      throw new BadRequestException(
+        'Project must be in CHAPTER4_5 stage to update abstract/introduction',
+      );
+    }
+    project.abstract = dto.abstract;
+    project.introduction = dto.introduction;
+    await this.projectRepo.save(project);
+    return createResponse('Abstract and Introduction updated', {});
   }
 }
