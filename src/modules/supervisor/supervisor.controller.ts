@@ -12,6 +12,7 @@ import {
   UploadedFile,
   UnauthorizedException,
   UseInterceptors,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -25,7 +26,7 @@ import {
 import { SupervisorService } from './supervisor.service';
 import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
 import { ReviewTopicsDto } from './dto/review-topics.dto';
-import { UserPayload } from 'express';
+import { Response, UserPayload } from 'express';
 import { StudentService } from '../student/student.service';
 import { ProjectStatus } from 'src/entities/project.entity';
 import { Assignment } from 'src/entities/assignment.entity';
@@ -61,6 +62,52 @@ export class SupervisorController {
   @Get('assigned-students/:id')
   async assignedStudentsBySupervisor(@Param('id') id: number) {
     return await this.supervisorService.assignedStudentsBySupervisor(id);
+  }
+
+  @ApiOperation({
+    summary: 'Export assigned students details for supervisor as CSV',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'CSV file with assigned students details',
+  })
+  @Get('export-assigned-students')
+  async exportAssignedStudents(
+    @Req() req: Request & { user: UserPayload },
+    @Res() res: Response,
+  ) {
+    const result = await this.supervisorService.assignedStudentsBySupervisor(
+      req.user.id,
+    );
+    const students = result.data || [];
+    // Prepare CSV header
+    const header = [
+      'Full Name',
+      'Institution ID',
+      'Email',
+      'Phone',
+      'Approved Topic',
+    ];
+    // Prepare CSV rows
+    const rows = students.map((s) => [
+      s.fullName,
+      s.institutionId,
+      s.email,
+      s.phone,
+      s.approvedTopic,
+    ]);
+    // Convert to CSV string
+    const csv = [header, ...rows]
+      .map((r) =>
+        r.map((x) => `"${(x ?? '').toString().replace(/"/g, '""')}"`).join(','),
+      )
+      .join('\r\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="assigned_students.csv"',
+    );
+    res.send(csv);
   }
 
   @ApiOperation({

@@ -12,6 +12,7 @@ import {
   UseInterceptors,
   UploadedFile,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -30,7 +31,7 @@ import { RoleGuard } from 'src/utils/guards/role.guard';
 import { CreateArchiveDto } from './dto/create-archive.dto';
 import { UserRole, UserStatus } from 'src/entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UserPayload } from 'express';
+import { Response, UserPayload } from 'express';
 import { AssignStudentsDto } from './dto/assign-students.dto';
 import { StudentLimitDto } from './dto/student-limit.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -122,6 +123,48 @@ export class CoordinatorController {
     );
   }
 
+  @ApiOperation({
+    summary: 'Export assigned supervisees and their supervisor as CSV',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'CSV file with supervisee and supervisor details',
+  })
+  @Get('export-supervisee-supervisor')
+  async exportSuperviseeSupervisor(
+    @Req() req: Request & { user: UserPayload },
+    @Res() res: Response,
+  ) {
+    const data = await this.coordinatorService.exportSuperviseeSupervisorList(req.user.id);
+    const header = [
+      'Full Name',
+      'Institution ID',
+      'Email',
+      'Phone',
+      'Approved Topic',
+      'Supervisor Name',
+    ];
+    const rows = data.map((s) => [
+      s.fullName,
+      s.institutionId,
+      s.email,
+      s.phone,
+      s.approvedTopic,
+      s.supervisorName,
+    ]);
+    const csv = [header, ...rows]
+      .map((r) =>
+        r.map((x) => `"${(x ?? '').toString().replace(/"/g, '""')}"`).join(','),
+      )
+      .join('\r\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="supervisee_supervisor_list.csv"',
+    );
+    res.send(csv);
+  }
+
   @Put('student-limit')
   @ApiOperation({ summary: 'Edit student limit for supervisors' })
   @ApiResponse({ status: 200, description: 'Max student limit updated' })
@@ -172,8 +215,7 @@ export class CoordinatorController {
         file: {
           type: 'string',
           format: 'binary',
-          description:
-            'Excel file with columns fullName and institutionId',
+          description: 'Excel file with columns fullName and institutionId',
         },
         role: {
           type: 'string',
@@ -207,7 +249,9 @@ export class CoordinatorController {
       throw new BadRequestException('No file uploaded');
     }
     if (![UserRole.student, UserRole.supervisor].includes(role)) {
-      throw new BadRequestException('Role must be either student or supervisor');
+      throw new BadRequestException(
+        'Role must be either student or supervisor',
+      );
     }
     const workbook = xlsx.read(file.buffer, { type: 'buffer' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -229,9 +273,6 @@ export class CoordinatorController {
       role,
     }));
 
-    return this.coordinatorService.bulkCreateAccount(
-      req.user.id,
-      dtos,
-    );
+    return this.coordinatorService.bulkCreateAccount(req.user.id, dtos);
   }
 }

@@ -8,7 +8,7 @@ import { FileType, ProjectFile } from 'src/entities/project-file.entity';
 import { Assignment } from 'src/entities/assignment.entity';
 import { Notification } from 'src/entities/notification.entity';
 import { CloudinaryProvider } from 'src/utils/provider/cloudinary.provider';
-import { Archive, ProjectCategory } from 'src/entities/archive.entity';
+import { Archive } from 'src/entities/archive.entity';
 
 @Injectable()
 export class UserCron {
@@ -24,8 +24,7 @@ export class UserCron {
     private readonly cloudinaryProvider: CloudinaryProvider,
   ) {}
 
-  // TODO: undo comment
-  // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async deleteUser30daysAfterProjectCompleted() {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const completedProjects = await this.projectRepo.find({
