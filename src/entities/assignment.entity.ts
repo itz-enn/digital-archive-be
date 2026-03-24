@@ -19,6 +19,9 @@ export class Assignment {
   @ManyToOne(() => User, (user) => user.id, { onDelete: 'CASCADE' })
   student: User;
 
+  @Column({ nullable: false })
+  departmentName: string;
+
   @Column({ nullable: false, default: true })
   isActive: boolean;
 

@@ -105,6 +105,7 @@ export class CoordinatorService {
       const newAssignment = this.assignmentRepo.create({
         supervisor,
         student,
+        departmentName: supervisor.department.name,
         isActive: true,
       });
       assignmentsToSave.push(newAssignment);
@@ -187,6 +188,48 @@ export class CoordinatorService {
       page,
       totalPages: Math.max(1, Math.ceil(total / limit)),
     });
+  }
+
+  async exportSuperviseeSupervisorList(id: number) {
+    const loggedInUser = await this.userService.findUserById(id);
+
+    const students = await this.userRepo.find({
+      where: {
+        role: UserRole.student,
+        department: { id: loggedInUser.department.id },
+      },
+    });
+    // Get all active assignments with supervisor and student
+    const assignments = await this.assignmentRepo.find({
+      where: { isActive: true, departmentName: loggedInUser.department.name },
+      relations: ['student', 'supervisor'],
+    });
+    // Map studentId to supervisor
+    const studentToSupervisor = new Map();
+    for (const a of assignments) {
+      studentToSupervisor.set(a.student.id, a.supervisor.fullName);
+    }
+    // For each student, get approved topic and supervisor if assigned
+    const result = [];
+    for (const s of students) {
+      let approvedTopic = '';
+      const projects = await this.userRepo.manager.query(
+        `SELECT title FROM projects WHERE studentId = ? AND proposalStatus = 'approved' LIMIT 1`,
+        [s.id],
+      );
+      if (projects && projects.length > 0) {
+        approvedTopic = projects[0].title;
+      }
+      result.push({
+        fullName: s.fullName,
+        institutionId: s.institutionId,
+        email: s.email,
+        phone: s.phone,
+        approvedTopic,
+        supervisorName: studentToSupervisor.get(s.id) || '',
+      });
+    }
+    return result;
   }
 
   // MANAGING SUPERVISORS

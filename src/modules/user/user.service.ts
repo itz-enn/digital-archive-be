@@ -9,6 +9,8 @@ import { Archive, ProjectCategory } from '../../entities/archive.entity';
 import { createResponse } from 'src/utils/global/create-response';
 import { User, UserRole, UserStatus } from 'src/entities/user.entity';
 import { EditProfileDto } from './dto/edit-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import * as bcrypt from 'bcryptjs';
 import { Assignment } from 'src/entities/assignment.entity';
 import {
   Project,
@@ -36,6 +38,19 @@ export class UserService {
 
     private readonly cloudinaryProvider: CloudinaryProvider,
   ) {}
+
+  async changePassword(userId: number, dto: ChangePasswordDto) {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      select: ['id', 'password'],
+    });
+    if (!user) throw new NotFoundException('User not found');
+    const isMatch = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isMatch) throw new ForbiddenException('Current password is incorrect');
+    user.password = await bcrypt.hash(dto.newPassword, 10);
+    await this.userRepo.save(user);
+    return createResponse('Password changed successfully', {});
+  }
 
   async findUserById(
     id: number,
@@ -247,7 +262,7 @@ export class UserService {
   }
 
   async deleteUser(loggedInUser: number, userId: number) {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
+    const user = await this.userRepo.findOne({ where: { id: loggedInUser } });
     if (!user) throw new NotFoundException('User not found');
     if (user.role !== UserRole.coordinator && userId !== loggedInUser) {
       throw new ForbiddenException(

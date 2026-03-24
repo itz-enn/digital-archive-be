@@ -20,6 +20,7 @@ import {
 import { UserService } from './user.service';
 import { ProjectCategory } from 'src/entities/archive.entity';
 import { EditProfileDto } from './dto/edit-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { UserPayload } from 'express';
 import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
 
@@ -27,6 +28,19 @@ import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Put('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change user password' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 400, description: 'Current password is incorrect' })
+  async changePassword(
+    @Req() req: Request & { user: UserPayload },
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return await this.userService.changePassword(req.user.id, dto);
+  }
 
   @Get('profile/:id')
   @UseGuards(JwtAuthGuard)
