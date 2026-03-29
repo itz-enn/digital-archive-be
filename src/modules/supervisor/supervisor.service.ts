@@ -39,7 +39,32 @@ export class SupervisorService {
     private readonly cloudinaryProvider: CloudinaryProvider,
   ) {}
 
-  async assignedStudentsBySupervisor(supervisorId: number) {
+  async assignedStudentsBySupervisor(
+    supervisorId: number,
+    filters?: {
+      name?: string;
+      email?: string;
+      institutionId?: string;
+    },
+  ) {
+    const params: any[] = [supervisorId];
+    let filterClauses = '';
+
+    if (filters?.name) {
+      filterClauses += ` AND s.fullName LIKE ?`;
+      params.push(`%${filters.name}%`);
+    }
+
+    if (filters?.email) {
+      filterClauses += ` AND s.email LIKE ?`;
+      params.push(`%${filters.email}%`);
+    }
+
+    if (filters?.institutionId) {
+      filterClauses += ` AND s.institutionId = ?`;
+      params.push(filters.institutionId);
+    }
+
     const assignedStudents = await this.assignmentRepo.query(
       `
     SELECT 
@@ -64,10 +89,11 @@ export class SupervisorService {
     LEFT JOIN projects p ON p.studentId = s.id
     WHERE a.supervisorId = ?
       AND a.isActive = true
+      ${filterClauses}
     GROUP BY a.id, s.id, s.fullName, s.institutionId, s.email, s.phone
     ORDER BY a.assignedAt ASC
     `,
-      [supervisorId],
+      params,
     );
 
     const students = assignedStudents.map((student) => {

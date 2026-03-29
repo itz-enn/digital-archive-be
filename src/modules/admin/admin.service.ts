@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { createResponse } from 'src/utils/global/create-response';
 import { Department } from 'src/entities/department.entity';
 import { User, UserRole } from 'src/entities/user.entity';
 import { CreateCoordinatorDto } from './dto/create-coordinator.dto';
 import * as bcrypt from 'bcryptjs';
 import { CreateDepartmentDto } from './dto/create-department.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @Injectable()
 export class AdminService {
@@ -108,5 +109,29 @@ export class AdminService {
       departments.length < 1 ? 'No department found' : 'Department found',
       departments,
     );
+  }
+
+  async resetCoordinatorInstitutionIds(dto: ResetPasswordDto) {
+    const { institutionIds } = dto;
+    const coordinators = await this.userRepo.find({
+      where: {
+        institutionId: In(institutionIds),
+        role: UserRole.coordinator,
+      },
+    });
+
+    if (!coordinators || coordinators.length === 0) {
+      throw new NotFoundException(
+        'No coordinators found for provided institution IDs',
+      );
+    }
+    for (const coordinator of coordinators) {
+      coordinator.password = await bcrypt.hash(coordinator.institutionId, 10);
+    }
+    await this.userRepo.save(coordinators);
+    return createResponse('Coordinators reset successfully', {
+      resetCount: coordinators.length,
+      institutionIds: coordinators.map((c) => c.institutionId),
+    });
   }
 }

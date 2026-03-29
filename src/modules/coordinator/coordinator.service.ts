@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Archive } from '../../entities/archive.entity';
 import { CreateArchiveDto } from './dto/create-archive.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -17,6 +17,7 @@ import { Assignment } from 'src/entities/assignment.entity';
 import { StudentLimitDto } from './dto/student-limit.dto';
 import { UserService } from '../user/user.service';
 import { NotificationCategory } from 'src/entities/notification.entity';
+import { ResetPasswordDto } from '../admin/dto/reset-password.dto';
 
 @Injectable()
 export class CoordinatorService {
@@ -195,7 +196,7 @@ export class CoordinatorService {
 
     const students = await this.userRepo.find({
       where: {
-        role: UserRole.student,
+        role:  UserRole.student,
         department: { id: loggedInUser.department.id },
       },
     });
@@ -286,5 +287,32 @@ export class CoordinatorService {
       `${successfulUploads} users created out of ${dtos.length}`,
       { failedUploads },
     );
+  }
+
+  async resetAccounts(id: number, dto: ResetPasswordDto) {
+    const loggedInUser = await this.userService.findUserById(id);
+    const { institutionIds } = dto;
+    const coordinators = await this.userRepo.find({
+      where: {
+        institutionId: In(institutionIds),
+        role: In([UserRole.supervisor, UserRole.student]),
+        department: { id: loggedInUser.department.id },
+      },
+    });
+
+    if (!coordinators || coordinators.length === 0) {
+      throw new NotFoundException(
+        'No coordinators found for provided institution IDs',
+      );
+    }
+
+    for (const coordinator of coordinators) {
+      coordinator.password = await bcrypt.hash(coordinator.institutionId, 10);
+    }
+    await this.userRepo.save(coordinators);
+    return createResponse('Coordinators reset successfully', {
+      resetCount: coordinators.length,
+      institutionIds: coordinators.map((c) => c.institutionId),
+    });
   }
 }
