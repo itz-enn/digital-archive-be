@@ -22,7 +22,7 @@ import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UserRole } from 'src/entities/user.entity';
 import { RoleGuard } from 'src/utils/guards/role.guard';
 import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
-import { UserPayload } from 'express';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 @ApiTags('admin')
 @ApiBearerAuth()
@@ -95,5 +95,17 @@ export class AdminController {
   @Get('departments')
   async getAllDepartments() {
     return await this.adminService.getAllDepartments();
+  }
+
+  @ApiOperation({
+    summary: 'Reset coordinator accounts',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Coordinators account reset successfully.',
+  })
+  @Post('reset-institution-ids')
+  async resetCoordinatorInstitutionIds(@Body() dto: ResetPasswordDto) {
+    return await this.adminService.resetCoordinatorInstitutionIds(dto);
   }
 }

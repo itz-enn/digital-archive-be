@@ -36,6 +36,7 @@ import { AssignStudentsDto } from './dto/assign-students.dto';
 import { StudentLimitDto } from './dto/student-limit.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import * as xlsx from 'xlsx';
+import { ResetPasswordDto } from '../admin/dto/reset-password.dto';
 
 @ApiTags('coordinator')
 @ApiBearerAuth()
@@ -135,7 +136,9 @@ export class CoordinatorController {
     @Req() req: Request & { user: UserPayload },
     @Res() res: Response,
   ) {
-    const data = await this.coordinatorService.exportSuperviseeSupervisorList(req.user.id);
+    const data = await this.coordinatorService.exportSuperviseeSupervisorList(
+      req.user.id,
+    );
     const header = [
       'Full Name',
       'Institution ID',
@@ -274,5 +277,20 @@ export class CoordinatorController {
     }));
 
     return this.coordinatorService.bulkCreateAccount(req.user.id, dtos);
+  }
+
+  @ApiOperation({
+    summary: 'Reset student/supervisor accounts',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Student/Supervisor accounts reset successfully.',
+  })
+  @Post('reset-institution-ids')
+  async resetAccounts(
+    @Body() dto: ResetPasswordDto,
+    @Req() req: Request & { user: UserPayload },
+  ) {
+    return await this.coordinatorService.resetAccounts(req.user.id, dto);
   }
 }

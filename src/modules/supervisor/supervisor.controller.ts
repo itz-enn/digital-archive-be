@@ -22,6 +22,7 @@ import {
   ApiResponse,
   ApiConsumes,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { SupervisorService } from './supervisor.service';
 import { JwtAuthGuard } from 'src/utils/guards/jwt-auth.guard';
@@ -54,14 +55,43 @@ export class SupervisorController {
     summary:
       'Get students assigned to a supervisor, returns user and project details including approved and rejected topics, project status',
   })
-  @ApiParam({ name: 'id', type: Number, description: 'Supervisor ID' })
+  @ApiQuery({
+    name: 'name',
+    type: String,
+    required: false,
+    description: 'Filter by student name',
+  })
+  @ApiQuery({
+    name: 'email',
+    type: String,
+    required: false,
+    description: 'Filter by student email',
+  })
+  @ApiQuery({
+    name: 'institutionId',
+    type: String,
+    required: false,
+    description: 'Filter by student institution ID',
+  })
   @ApiResponse({
     status: 200,
     description: 'List of assigned students',
   })
-  @Get('assigned-students/:id')
-  async assignedStudentsBySupervisor(@Param('id') id: number) {
-    return await this.supervisorService.assignedStudentsBySupervisor(id);
+  @Get('assigned-students')
+  async assignedStudentsBySupervisor(
+    @Req() req: Request & { user: UserPayload },
+    @Query('name') name?: string,
+    @Query('email') email?: string,
+    @Query('institutionId') institutionId?: string,
+  ) {
+    return await this.supervisorService.assignedStudentsBySupervisor(
+      req.user.id,
+      {
+        name,
+        email,
+        institutionId,
+      },
+    );
   }
 
   @ApiOperation({
@@ -162,13 +192,13 @@ export class SupervisorController {
       "View a student's uploaded files including submission and correction",
   })
   @ApiParam({ name: 'id', type: Number, description: 'Student ID' })
-  @ApiParam({
+  @ApiQuery({
     name: 'projectStage',
     enum: ProjectStatus,
     required: false,
     description: 'Filter by project stage',
   })
-  @ApiParam({
+  @ApiQuery({
     name: 'type',
     enum: FileType,
     required: false,
