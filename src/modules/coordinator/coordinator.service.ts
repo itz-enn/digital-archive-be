@@ -194,9 +194,9 @@ export class CoordinatorService {
   async exportSuperviseeSupervisorList(id: number) {
     const loggedInUser = await this.userService.findUserById(id);
 
-    const users = await this.userRepo.find({
+    const students = await this.userRepo.find({
       where: {
-        role: In([UserRole.supervisor, UserRole.student]),
+        role:  UserRole.student,
         department: { id: loggedInUser.department.id },
       },
     });
@@ -212,7 +212,7 @@ export class CoordinatorService {
     }
     // For each student, get approved topic and supervisor if assigned
     const result = [];
-    for (const s of users) {
+    for (const s of students) {
       let approvedTopic = '';
       const projects = await this.userRepo.manager.query(
         `SELECT title FROM projects WHERE studentId = ? AND proposalStatus = 'approved' LIMIT 1`,
